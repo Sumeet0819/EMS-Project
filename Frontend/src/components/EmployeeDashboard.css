@@ -1,0 +1,154 @@
+.emp-main-wrapper {
+  display: flex;
+  min-height: 100vh;
+  background: #f7f9fc;
+  padding: 20px;
+}
+
+/* MAIN CONTENT */
+.task-content {
+  flex: 1;
+  padding-left: 28px;
+}
+
+.section-title {
+  margin-bottom: 20px;
+}
+
+/* CARD LIST */
+.task-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* CARD */
+.task-card {
+  background: #fff;
+  padding: 16px;
+  border-radius: 6px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+  border: 1px solid #ececec;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card-header h3 {
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+.card-menu {
+  cursor: pointer;
+  opacity: 0.5;
+}
+
+/* STATUS */
+.card-status {
+  margin-top: 6px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+}
+
+.progress-label {
+  font-weight: 500;
+  color: #3f51b5;
+}
+
+.subtask-label {
+  opacity: 0.7;
+}
+
+/* TAGS */
+.card-tags {
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+}
+
+.tag-blue {
+  padding: 4px 10px;
+  background: #e3f2fd;
+  color: #0d47a1;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+/* Priority tags */
+.tag-priority {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.high {
+  background: #ffebee;
+  color: #c62828;
+}
+
+.mid {
+  background: #fff8e1;
+  color: #ef6c00;
+}
+
+.low {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+/* FOOTER */
+.card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+}
+
+.task-date {
+  opacity: 0.6;
+}
+
+.task-timer {
+  color: #2e7d32;
+  font-weight: 600;
+}
+
+.start-btn,
+.submit-btn {
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.start-btn {
+  background: #2196f3;
+  color: #fff;
+}
+
+.submit-btn {
+  background: #43a047;
+  color: #fff;
+}
+
+.done-label {
+  background: #e8f5e9;
+  color: #2e7d32;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+/* RESPONSIVE */
+@media (max-width: 780px) {
+  .task-content {
+    padding-left: 0;
+  }
+}

@@ -1,0 +1,81 @@
+.task-page-wrapper {
+  width: 100%;
+  padding: 24px;
+}
+
+.task-header-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.task-title {
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.task-subtitle {
+  font-size: 14px;
+  color: #666;
+}
+
+.add-task-btn {
+  background: #2563eb;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+}
+
+.add-task-btn:hover {
+  background: #1d4ed8;
+}
+
+.task-table-wrapper {
+  margin-top: 24px;
+  overflow-x: auto;
+}
+
+.task-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+}
+
+.task-table th,
+.task-table td {
+  padding: 14px 12px;
+  border-bottom: 1px solid #eee;
+  text-align: left;
+}
+
+.priority-badge,
+.status-badge {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* Priority Colors */
+.priority-badge.low { background: #e8f5e9; color: #2e7d32; }
+.priority-badge.medium { background: #fff8e1; color: #f9a825; }
+.priority-badge.high { background: #ffebee; color: #c62828; }
+.priority-badge.critical { background: #fbe9e7; color: #d84315; }
+
+/* Status Colors */
+.status-badge.pending { background: #e3f2fd; color: #1565c0; }
+.status-badge.in-progress { background: #fff3e0; color: #ef6c00; }
+.status-badge.completed { background: #e8f5e9; color: #2e7d32; }
+
+@media (max-width: 600px) {
+  .add-task-btn {
+    padding: 10px 14px;
+  }
+
+  .task-table th,
+  .task-table td {
+    padding: 10px 8px;
+  }
+}

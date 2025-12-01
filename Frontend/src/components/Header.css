@@ -1,0 +1,32 @@
+.header {
+  height: 70px;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 24px;
+  gap: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.header span {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.logout{
+
+  display: flex;
+  align-items: center;
+  border: none;
+  justify-content: center;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.2s;
+  font-weight: 500;
+}
+
