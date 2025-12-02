@@ -7,6 +7,7 @@ async function registerUser(req, res) {
     fullName: { firstName, lastName },
     email,
     password,
+    role = "user",
   } = req.body;
 
   const existingUser = await userModel.findOne({ email });
@@ -24,14 +25,20 @@ async function registerUser(req, res) {
     },
     email,
     password: hashPassword,
-     role: "user",
+    role,
   });
   await user.save();
   const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
   res.cookie("token", token);
-  res.status(201).json({ message: "User registered successfully", user:{
-    id: user._id, fullName: user.fullName, email: user.email
-  } });
+  res.status(201).json({
+    message: "User registered successfully",
+    employee: {
+      id: user._id,
+      fullName: user.fullName,
+      email: user.email,
+      role: user.role,
+    },
+  });
 }
 
 async function loginUser(req, res) {
@@ -50,8 +57,14 @@ async function loginUser(req, res) {
   }
   const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
   res.cookie("token", token);
-  res.status(200).json({ message: "User logged in successfully", user:{
-    id: user._id, fullName: user.fullName, email: user.email
-  } });
+  res.status(200).json({
+    message: "User logged in successfully",
+    employee: {
+      id: user._id,
+      fullName: user.fullName,
+      email: user.email,
+      role: user.role,
+    },
+  });
 }
 module.exports = { registerUser, loginUser };

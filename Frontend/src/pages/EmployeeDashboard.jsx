@@ -1,35 +1,54 @@
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
+  asyncLoadTasksByEmployee,
   asyncStartTask,
   asyncSubmitTask,
   updateTaskTimerLocal,
 } from "../store/actions/employeeTaskActions";
 import "../components/EmployeeDashboard.css";
 
-const EmployeeTaskCards = ({ employee }) => {
+const EmployeeDashboard = () => {
   const dispatch = useDispatch();
   const { tasks, loading } = useSelector((state) => state.employeeTaskReducer);
+  const { user } = useSelector((state) => state.userReducer);
 
-  // TIMER ENGINE
+  // Load tasks assigned to the current employee on mount
+  useEffect(() => {
+    if (user && user.id) {
+      dispatch(asyncLoadTasksByEmployee(user.id));
+    }
+  }, [dispatch, user]);
+
+  // TIMER ENGINE - Calculate elapsed time for in-progress tasks
   useEffect(() => {
     const interval = setInterval(() => {
       tasks.forEach((t) => {
-        if (t.status === "inprogress" && t.startTime) {
-          const timer = Math.floor((Date.now() - t.startTime) / 1000);
-          dispatch(updateTaskTimerLocal(t.id, timer));
+        if (t.status === "in-progress" && t.startTime) {
+          const startTime = new Date(t.startTime);
+          const elapsedMs = Date.now() - startTime.getTime();
+          const elapsedSec = Math.floor(elapsedMs / 1000);
+          dispatch(updateTaskTimerLocal(t._id, elapsedSec));
         }
       });
     }, 1000);
     return () => clearInterval(interval);
   }, [tasks, dispatch]);
 
-  const startTask = (id) => {
-    dispatch(asyncStartTask(id));
+  const startTask = async (id) => {
+    try {
+      await dispatch(asyncStartTask(id));
+    } catch (error) {
+      alert("Failed to start task: " + error.message);
+    }
   };
 
-  const submitTask = (id) => {
-    dispatch(asyncSubmitTask(id));
+  const submitTask = async (id) => {
+    try {
+      await dispatch(asyncSubmitTask(id));
+    } catch (error) {
+      alert("Failed to submit task: " + error.message);
+    }
   };
 
   const formatTime = (sec) => {
@@ -50,69 +69,77 @@ const EmployeeTaskCards = ({ employee }) => {
     <div className="emp-main-wrapper">
       {/* MAIN CONTENT */}
       <div className="task-content">
-        <h2 className="section-title">My Tasks</h2>
+        <div className="section-header">
+          <h2 className="section-title">My Tasks</h2>
+          <p className="section-subtitle">Tasks assigned to you</p>
+        </div>
+
         <div className="task-card-list">
-          {tasks.length > 0 ? (
+          {Array.isArray(tasks) && tasks.length > 0 ? (
             tasks.map((task) => (
-              <div key={task.id} className="task-card">
-                {/* TOP ROW */}
+              <div key={task._id} className="task-card">
+                {/* HEADER */}
                 <div className="card-header">
-                  <h3>{task.title}</h3>
-                  <i className="card-menu">⋮⋮</i>
+                  <div>
+                    <h3>{task.title || "Untitled Task"}</h3>
+                    <p className="task-description">
+                      {task.description || "No description"}
+                    </p>
+                  </div>
                 </div>
 
-                {/* STATUS ROW */}
+                {/* STATUS & PRIORITY */}
                 <div className="card-status">
-                  <span className="progress-label">Progress</span>
-                  <span className="subtask-label">
-                    {task.subtasks?.done || 0}/{task.subtasks?.total || 0} subtasks
+                  <span className={`status-badge ${task.status || "pending"}`}>
+                    {(task.status || "pending").replace("-", " ")}
+                  </span>
+                  <span className={`priority-badge ${task.priority || "medium"}`}>
+                    {task.priority || "medium"}
                   </span>
                 </div>
 
-                {/* TAGS */}
-                <div className="card-tags">
-                  <span className="tag-blue">{task.tag}</span>
-                  <span className={`tag-priority ${task.priority?.toLowerCase()}`}>
-                    {task.priority}
-                  </span>
-                </div>
+                {/* DEADLINE */}
+                {task.deadline && (
+                  <div className="task-deadline">
+                    Due: {new Date(task.deadline).toLocaleDateString()}
+                  </div>
+                )}
 
                 {/* FOOTER ROW */}
                 <div className="card-footer">
-                  <span className="task-date">{task.date}</span>
-
-                  {task.status === "inprogress" && (
-                    <span className="task-timer">
-                      {formatTime(task.timer || 0)}
-                    </span>
-                  )}
-
-                  {task.status === "todo" && (
+                  {(task.status || "pending") === "pending" && (
                     <button
                       className="start-btn"
-                      onClick={() => startTask(task.id)}
+                      onClick={() => startTask(task._id)}
                     >
-                      Start
+                      Start Task
                     </button>
                   )}
 
-                  {task.status === "inprogress" && (
-                    <button
-                      className="submit-btn"
-                      onClick={() => submitTask(task.id)}
-                    >
-                      Submit
-                    </button>
+                  {(task.status || "pending") === "in-progress" && (
+                    <>
+                      <span className="task-timer">
+                        ⏱️ {formatTime(task.timer || 0)}
+                      </span>
+                      <button
+                        className="submit-btn"
+                        onClick={() => submitTask(task._id)}
+                      >
+                        Submit
+                      </button>
+                    </>
                   )}
 
-                  {task.status === "done" && (
-                    <span className="done-label">Completed</span>
+                  {(task.status || "pending") === "completed" && (
+                    <span className="done-label">✓ Completed</span>
                   )}
                 </div>
               </div>
             ))
           ) : (
-            <p>No tasks assigned yet.</p>
+            <div className="no-tasks-container">
+              <p className="no-tasks">No tasks assigned yet.</p>
+            </div>
           )}
         </div>
       </div>
@@ -120,4 +147,4 @@ const EmployeeTaskCards = ({ employee }) => {
   );
 };
 
-export default EmployeeTaskCards;
+export default EmployeeDashboard;

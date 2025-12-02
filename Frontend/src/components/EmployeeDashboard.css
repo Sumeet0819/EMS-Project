@@ -8,147 +8,205 @@
 /* MAIN CONTENT */
 .task-content {
   flex: 1;
-  padding-left: 28px;
+  padding: 0;
+}
+
+.section-header {
+  margin-bottom: 24px;
 }
 
 .section-title {
-  margin-bottom: 20px;
+  margin-bottom: 6px;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.section-subtitle {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0;
 }
 
 /* CARD LIST */
 .task-card-list {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 16px;
 }
 
 /* CARD */
 .task-card {
   background: #fff;
-  padding: 16px;
+  padding: 18px;
   border-radius: 6px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
-  border: 1px solid #ececec;
+  transition: 0.2s ease;
+}
+
+.task-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  margin-bottom: 12px;
 }
 
 .card-header h3 {
-  font-size: 0.8rem;
-  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 6px 0;
 }
 
-.card-menu {
-  cursor: pointer;
-  opacity: 0.5;
-}
-
-/* STATUS */
-.card-status {
-  margin-top: 6px;
-  display: flex;
-  justify-content: space-between;
+.task-description {
   font-size: 13px;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.4;
 }
 
-.progress-label {
-  font-weight: 500;
-  color: #3f51b5;
-}
-
-.subtask-label {
-  opacity: 0.7;
-}
-
-/* TAGS */
-.card-tags {
-  margin-top: 8px;
+/* STATUS & PRIORITY */
+.card-status {
   display: flex;
   gap: 8px;
+  margin-bottom: 12px;
 }
 
-.tag-blue {
-  padding: 4px 10px;
-  background: #e3f2fd;
-  color: #0d47a1;
-  border-radius: 6px;
-  font-size: 12px;
-}
-
-/* Priority tags */
-.tag-priority {
+.status-badge,
+.priority-badge {
   padding: 4px 10px;
   border-radius: 6px;
   font-size: 12px;
   font-weight: 500;
+  text-transform: capitalize;
 }
 
-.high {
-  background: #ffebee;
-  color: #c62828;
+.status-badge.pending {
+  background: #fee2e2;
+  color: #991b1b;
 }
 
-.mid {
-  background: #fff8e1;
-  color: #ef6c00;
+.status-badge.in-progress {
+  background: #fef3c7;
+  color: #92400e;
 }
 
-.low {
+.status-badge.completed {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.priority-badge.low {
   background: #e8f5e9;
   color: #2e7d32;
 }
 
-/* FOOTER */
+.priority-badge.medium {
+  background: #fff8e1;
+  color: #f9a825;
+}
+
+.priority-badge.high {
+  background: #ffebee;
+  color: #c62828;
+}
+
+/* DEADLINE */
+.task-deadline {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 12px;
+  padding: 6px 10px;
+  background: #f3f4f6;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+/* FOOTER ROW */
 .card-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-top: 12px;
-}
-
-.task-date {
-  opacity: 0.6;
+  padding-top: 12px;
+  border-top: 1px solid #e5e7eb;
 }
 
 .task-timer {
-  color: #2e7d32;
+  color: #2563eb;
   font-weight: 600;
+  font-size: 13px;
 }
 
 .start-btn,
 .submit-btn {
-  padding: 6px 14px;
-  border-radius: 8px;
+  padding: 8px 16px;
+  border-radius: 6px;
   border: none;
   cursor: pointer;
   font-size: 13px;
+  font-weight: 500;
+  transition: 0.2s ease;
 }
 
 .start-btn {
-  background: #2196f3;
+  background: #2563eb;
   color: #fff;
+}
+
+.start-btn:hover {
+  background: #1d4ed8;
 }
 
 .submit-btn {
-  background: #43a047;
+  background: #10b981;
   color: #fff;
 }
 
-.done-label {
-  background: #e8f5e9;
-  color: #2e7d32;
-  padding: 6px 10px;
-  border-radius: 8px;
-  font-size: 12px;
+.submit-btn:hover {
+  background: #059669;
 }
 
-/* RESPONSIVE */
-@media (max-width: 780px) {
+.done-label {
+  background: #dcfce7;
+  color: #15803d;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.no-tasks-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
+}
+
+.no-tasks {
+  text-align: center;
+  color: #999;
+  font-size: 15px;
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .emp-main-wrapper {
+    flex-direction: column;
+    padding: 16px;
+  }
+
   .task-content {
-    padding-left: 0;
+    padding: 0;
+  }
+
+  .card-footer {
+    flex-direction: column;
+    gap: 10px;
+    align-items: stretch;
+  }
+
+  .start-btn,
+  .submit-btn {
+    width: 100%;
   }
 }

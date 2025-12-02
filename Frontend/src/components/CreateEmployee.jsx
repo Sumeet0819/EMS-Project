@@ -10,9 +10,7 @@ const CreateEmployee = ({ onClose }) => {
     firstName: "",
     lastName: "",
     email: "",
-    mobile: "",
-    role: "employee",
-    password: "default123", // Default password
+    password: "default123",
   });
 
   const handleChange = (e) => {
@@ -28,8 +26,6 @@ const CreateEmployee = ({ onClose }) => {
         firstName: "",
         lastName: "",
         email: "",
-        mobile: "",
-        role: "employee",
         password: "default123",
       });
       onClose();
@@ -47,7 +43,7 @@ const CreateEmployee = ({ onClose }) => {
         </div>
 
         <p className="sub-text">
-          Enter the employee details below. They will receive login credentials via email.
+          Enter the employee details. Default role is 'employee'. Default password is 'default123'.
         </p>
 
         <form className="form-grid" onSubmit={handleSubmit}>
@@ -80,7 +76,7 @@ const CreateEmployee = ({ onClose }) => {
             <input
               type="email"
               name="email"
-              placeholder="john.doe@manj.com"
+              placeholder="john.doe@company.com"
               value={form.email}
               onChange={handleChange}
               required
@@ -88,23 +84,14 @@ const CreateEmployee = ({ onClose }) => {
           </div>
 
           <div className="form-group full">
-            <label>Mobile Number</label>
+            <label>Password</label>
             <input
-              type="text"
-              name="mobile"
-              placeholder="+1234567890"
-              value={form.mobile}
+              type="password"
+              name="password"
+              placeholder="default123"
+              value={form.password}
               onChange={handleChange}
-              required
             />
-          </div>
-
-          <div className="form-group full">
-            <label>Role</label>
-            <select name="role" value={form.role} onChange={handleChange}>
-              <option value="employee">Employee</option>
-              <option value="admin">Admin</option>
-            </select>
           </div>
 
           <div className="btn-row">

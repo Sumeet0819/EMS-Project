@@ -6,7 +6,7 @@ import "../components/admin.css";
 import TaskPage from "./TaskPage";
 import Sidebar from "../components/Sidebar";
 
-const Admin = () => {
+const AdminPage = () => {
   const [activePage, setActivePage] = useState("dashboard");
 
   const renderPage = () => {
@@ -15,8 +15,8 @@ const Admin = () => {
         return <Dashboard />;
       case "team":
         return <TeamManagement />;
-         case "task":
-        return <TaskPage/>;
+      case "task":
+        return <TaskPage />;
       default:
         return <Dashboard />;
     }
@@ -29,12 +29,10 @@ const Admin = () => {
       <div className="admin-right">
         <Header />
 
-        <div className="admin-content">
-          {renderPage()}
-        </div>
+        <div className="admin-content">{renderPage()}</div>
       </div>
     </div>
   );
 };
 
-export default Admin;
+export default AdminPage;

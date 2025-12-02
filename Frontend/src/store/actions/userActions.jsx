@@ -3,19 +3,23 @@ import axios from "../../utils/axiosconfig";
 import { loaduser } from "../reducers/userSlice";
 
 
-export const asyncRegisterUser = (user) => async (dispatch, getState) => {
+export const asyncRegisterUser = (employee) => async (dispatch, getState) => {
   try {
-    const res = await axios.post("/users", user);
+    const { data } = await axios.post("/auth/register", employee);
+    localStorage.setItem("employee", JSON.stringify(data.employee));
+    dispatch(loaduser(data.employee));
+    return data;
   } catch (error) {
     console.log(error);
+    throw error;
   }
 };
 
 export const asyncCurrentuser = () => async (dispatch, getstate) => {
   try {
-    const user = localStorage.getItem("user");
-    if (user) dispatch(loaduser(JSON.parse(user)));
-    else console.log("user not found");
+    const employee = localStorage.getItem("employee");
+    if (employee) dispatch(loaduser(JSON.parse(employee)));
+    else console.log("employee not found");
   } catch (error) {
     console.log(error);
   }
@@ -23,54 +27,67 @@ export const asyncCurrentuser = () => async (dispatch, getstate) => {
 
 export const asyncLogoutuser = () => async (dispatch, getstate) => {
   try {
-    localStorage.setItem("user", "");
+    localStorage.setItem("employee", "");
   } catch (error) {
     console.log(error);
   }
 };
 
 
-export const asyncLoginuser = (user, navigate, expectedRole) => async (dispatch, getState) => {
+export const asyncLoginuser = (credentials, navigate) => async (dispatch, getState) => {
   try {
-    const { data } = await axios.get(`/users?email=${user.email}`);
+    const { data } = await axios.post("/auth/login", credentials);
+    
+    const employee = {
+      id: data.employee.id,
+      firstName: data.employee.fullName.firstName,
+      lastName: data.employee.fullName.lastName,
+      email: data.employee.email,
+      role: data.employee.role,
+      fullName: data.employee.fullName,
+    };
+    
+    console.log("Employee data:", employee);
+    console.log("Employee role:", employee.role);
+    
+    localStorage.setItem("employee", JSON.stringify(employee));
+    dispatch(loaduser(employee));
 
-    if (data.length > 0 && data[0].password === user.password) {
-      const loggedInUser = data[0];
-      localStorage.setItem("user", JSON.stringify(loggedInUser));
-      dispatch(loaduser(loggedInUser));
-
-      // Redirect based on role
-      if (loggedInUser.role === "admin") {
-        navigate("/admin");
-      } else if (loggedInUser.role === "employee") {
-        navigate("/employee");
-      }
-    } else {
-      throw new Error("User not found or wrong password");
+    // Navigate immediately based on role
+    if (employee.role === "admin") {
+      console.log("Navigating to /admin");
+      navigate("/admin", { replace: true });
+    } else if (employee.role === "employee") {
+      console.log("Navigating to /employee");
+      navigate("/employee", { replace: true });
     }
+    
+    return { success: true, employee };
   } catch (error) {
-    console.error(error);
+    console.error("Login error:", error);
     throw error;
   }
 };
 
 
-export const asyncUpdateuser = (id,user) => async (dispatch, getState) => {
+export const asyncUpdateuser = (id, employee) => async (dispatch, getState) => {
   try {
-    const res = await axios.patch(`/users/${id}`,user)
-    localStorage.setItem("user", JSON.stringify(user));
-    console.log(res);
-    
+    const { data } = await axios.put(`/auth/${id}`, employee);
+    localStorage.setItem("employee", JSON.stringify(employee));
+    dispatch(loaduser(employee));
+    return data;
   } catch (error) {
     console.log(error);
+    throw error;
   }
 };
 
 export const asyncDeleteuser = (id) => async (dispatch, getState) => {
   try {
-    const res = await axios.delete(`/users/${id}`)
-    localStorage.removeItem("user");
+    await axios.delete(`/auth/${id}`);
+    localStorage.removeItem("employee");
   } catch (error) {
     console.log(error);
+    throw error;
   }
 };

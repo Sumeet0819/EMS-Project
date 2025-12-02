@@ -1,15 +1,28 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { asyncLoadEmployees } from "../store/actions/employeeActions";
 import "../components/CreateTask.css";
 
-const CreateTask = ({ onCancel, onSubmit, employees }) => {
+const CreateTask = ({ onCancel, onSubmit, employees: passedEmployees }) => {
+  const dispatch = useDispatch();
+  const { employees: reduxEmployees, loading } = useSelector((state) => state.employeeReducer);
   const [form, setForm] = useState({
     title: "",
     description: "",
     assignedTo: "",
-    priority: "Medium",
-    status: "Pending",
+    priority: "medium",
+    status: "pending",
     deadline: ""
   });
+
+  // Load employees on mount if not passed as prop
+  useEffect(() => {
+    if (!passedEmployees || passedEmployees.length === 0) {
+      dispatch(asyncLoadEmployees());
+    }
+  }, [dispatch, passedEmployees]);
+
+  const employees = passedEmployees && passedEmployees.length > 0 ? passedEmployees : reduxEmployees;
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -19,13 +32,14 @@ const CreateTask = ({ onCancel, onSubmit, employees }) => {
     e.preventDefault();
 
     // Find employee name by ID
-    const selectedEmployee = employees.find((e) => e.id == form.assignedTo);
+    const selectedEmployee = employees.find((e) => e._id === form.assignedTo || e.id === form.assignedTo);
 
     // Return form to parent
     onSubmit({
       title: form.title,
       description: form.description,
-      assignedTo: selectedEmployee ? `${selectedEmployee.firstName} ${selectedEmployee.lastName}` : "",
+      assignedTo: form.assignedTo,
+      assignedToName: selectedEmployee ? `${selectedEmployee.fullName?.firstName || selectedEmployee.firstName} ${selectedEmployee.fullName?.lastName || selectedEmployee.lastName}` : "",
       priority: form.priority,
       status: form.status,
       deadline: form.deadline
@@ -36,8 +50,8 @@ const CreateTask = ({ onCancel, onSubmit, employees }) => {
       title: "",
       description: "",
       assignedTo: "",
-      priority: "Medium",
-      status: "Pending",
+      priority: "medium",
+      status: "pending",
       deadline: ""
     });
   };
@@ -61,6 +75,7 @@ const CreateTask = ({ onCancel, onSubmit, employees }) => {
               required
               onChange={handleChange}
               value={form.title}
+              placeholder="Enter task title"
             />
           </div>
 
@@ -70,16 +85,25 @@ const CreateTask = ({ onCancel, onSubmit, employees }) => {
               name="description"
               onChange={handleChange}
               value={form.description}
+              placeholder="Enter task description"
             ></textarea>
           </div>
 
           <div className="form-group">
             <label>Assign To</label>
-            <select name="assignedTo" required onChange={handleChange} value={form.assignedTo}>
-              <option value="">Select employee</option>
+            <select 
+              name="assignedTo" 
+              required 
+              onChange={handleChange} 
+              value={form.assignedTo}
+              disabled={loading || employees.length === 0}
+            >
+              <option value="">
+                {loading ? "Loading employees..." : "Select employee"}
+              </option>
               {employees.map((emp) => (
-                <option key={emp.id} value={emp.id}>
-                  {emp.firstName} {emp.lastName}
+                <option key={emp._id || emp.id} value={emp._id || emp.id}>
+                  {emp.fullName?.firstName || emp.firstName} {emp.fullName?.lastName || emp.lastName}
                 </option>
               ))}
             </select>
@@ -88,19 +112,18 @@ const CreateTask = ({ onCancel, onSubmit, employees }) => {
           <div className="form-group">
             <label>Priority</label>
             <select name="priority" onChange={handleChange} value={form.priority}>
-              <option>Low</option>
-              <option>Medium</option>
-              <option>High</option>
-              <option>Critical</option>
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
             </select>
           </div>
 
           <div className="form-group">
             <label>Status</label>
             <select name="status" onChange={handleChange} value={form.status}>
-              <option>Pending</option>
-              <option>In Progress</option>
-              <option>Completed</option>
+              <option value="pending">Pending</option>
+              <option value="in-progress">In Progress</option>
+              <option value="completed">Completed</option>
             </select>
           </div>
 
@@ -109,7 +132,6 @@ const CreateTask = ({ onCancel, onSubmit, employees }) => {
             <input
               type="date"
               name="deadline"
-              required
               onChange={handleChange}
               value={form.deadline}
             />
@@ -119,7 +141,9 @@ const CreateTask = ({ onCancel, onSubmit, employees }) => {
             <button type="button" className="cancel-btn" onClick={onCancel}>
               Cancel
             </button>
-            <button type="submit" className="primary-btn">Create Task</button>
+            <button type="submit" className="primary-btn" disabled={loading || employees.length === 0}>
+              Create Task
+            </button>
           </div>
         </form>
       </div>

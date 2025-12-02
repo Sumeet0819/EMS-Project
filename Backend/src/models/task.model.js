@@ -23,7 +23,7 @@ const taskSchema = new mongoose.Schema(
     },
     deadline: {
       type: Date,
-      required: true,
+      required: false,
     },
     assignedTo: {
       type: mongoose.Schema.Types.ObjectId,
@@ -34,6 +34,14 @@ const taskSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
+    },
+    startTime: {
+      type: Date,
+      default: null,
+    },
+    completedTime: {
+      type: Date,
+      default: null,
     },
   },
   {

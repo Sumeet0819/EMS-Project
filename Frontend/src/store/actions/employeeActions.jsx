@@ -13,7 +13,8 @@ export const asyncLoadEmployees = () => async (dispatch, getState) => {
   try {
     dispatch(setLoading(true));
     const { data } = await axios.get("/employees");
-    dispatch(loadEmployees(data));
+    const employees = Array.isArray(data.data) ? data.data : data;
+    dispatch(loadEmployees(employees));
     dispatch(setError(null));
   } catch (error) {
     console.log(error);
@@ -22,14 +23,23 @@ export const asyncLoadEmployees = () => async (dispatch, getState) => {
   }
 };
 
-// Create a new employee
+// Create a new employee - Default role as "employee"
 export const asyncCreateEmployee = (employee) => async (dispatch, getState) => {
   try {
     dispatch(setLoading(true));
-    const { data } = await axios.post("/employees", employee);
-    dispatch(createEmployee(data));
+    const employeeData = {
+      fullName: {
+        firstName: employee.firstName,
+        lastName: employee.lastName,
+      },
+      email: employee.email,
+      password: employee.password || "default123",
+    };
+    
+    const { data } = await axios.post("/employees", employeeData);
+    dispatch(createEmployee(data.data || data));
     dispatch(setError(null));
-    return data; // Return created employee for confirmation
+    return data;
   } catch (error) {
     console.log(error);
     dispatch(setError(error.message || "Failed to create employee"));
@@ -39,11 +49,11 @@ export const asyncCreateEmployee = (employee) => async (dispatch, getState) => {
 };
 
 // Update an existing employee
-export const asyncUpdateEmployee = (employeeId, updatedEmployee) => async (dispatch, getState) => {
+export const asyncUpdateEmployee = (updatedEmployee) => async (dispatch, getState) => {
   try {
     dispatch(setLoading(true));
-    const { data } = await axios.patch(`/employees/${employeeId}`, updatedEmployee);
-    dispatch(updateEmployee(data));
+    const { data } = await axios.put(`/employees/${updatedEmployee._id}`, updatedEmployee);
+    dispatch(updateEmployee(data.data || data));
     dispatch(setError(null));
     return data;
   } catch (error) {

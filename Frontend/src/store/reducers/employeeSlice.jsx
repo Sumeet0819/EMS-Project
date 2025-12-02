@@ -12,29 +12,33 @@ const employeeSlice = createSlice({
   reducers: {
     // Load all employees
     loadEmployees: (state, action) => {
-      state.employees = action.payload;
+      state.employees = Array.isArray(action.payload) ? action.payload : [];
       state.loading = false;
+      state.error = null;
     },
 
     // Create a new employee
     createEmployee: (state, action) => {
       state.employees.push(action.payload);
       state.loading = false;
+      state.error = null;
     },
 
     // Update an existing employee
     updateEmployee: (state, action) => {
-      const index = state.employees.findIndex((e) => e.id === action.payload.id);
+      const index = state.employees.findIndex((e) => e._id === action.payload._id || e.id === action.payload.id);
       if (index !== -1) {
         state.employees[index] = { ...state.employees[index], ...action.payload };
       }
       state.loading = false;
+      state.error = null;
     },
 
     // Delete an employee
     deleteEmployee: (state, action) => {
-      state.employees = state.employees.filter((e) => e.id !== action.payload);
+      state.employees = state.employees.filter((e) => e._id !== action.payload && e.id !== action.payload);
       state.loading = false;
+      state.error = null;
     },
 
     // Set loading state

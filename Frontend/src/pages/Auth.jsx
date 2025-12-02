@@ -12,7 +12,7 @@ const Auth = () => {
   const navigate = useNavigate();
 
   const [adminForm, setAdminForm] = useState({ email: "", password: "" });
-  const [employeeForm, setEmployeeForm] = useState({ employeeId: "", password: "" });
+  const [employeeForm, setEmployeeForm] = useState({ email: "", password: "" });
 
   const handleAdminChange = (e) => {
     setAdminForm({ ...adminForm, [e.target.name]: e.target.value });
@@ -22,32 +22,38 @@ const Auth = () => {
     setEmployeeForm({ ...employeeForm, [e.target.name]: e.target.value });
   };
 
-  const handleAdminSubmit = async (e) => {
+  const handleAdminSubmit = (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
 
-    try {
-      await dispatch(asyncLoginuser(adminForm, navigate, "admin"));
-    } catch (err) {
-      setError(err.message || "Login failed");
-    } finally {
-      setLoading(false);
-    }
+    dispatch(asyncLoginuser(adminForm, navigate))
+      .then(() => {
+        // Navigation happens in the action
+        console.log("Admin login successful");
+      })
+      .catch((err) => {
+        console.error("Admin login error:", err);
+        setError(err.response?.data?.message || err.message || "Login failed");
+        setLoading(false);
+      });
   };
 
-  const handleEmployeeSubmit = async (e) => {
+  const handleEmployeeSubmit = (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
 
-    try {
-      await dispatch(asyncLoginuser({ email: employeeForm.employeeId, password: employeeForm.password }, navigate, "employee"));
-    } catch (err) {
-      setError(err.message || "Login failed");
-    } finally {
-      setLoading(false);
-    }
+    dispatch(asyncLoginuser(employeeForm, navigate))
+      .then(() => {
+        // Navigation happens in the action
+        console.log("Employee login successful");
+      })
+      .catch((err) => {
+        console.error("Employee login error:", err);
+        setError(err.response?.data?.message || err.message || "Login failed");
+        setLoading(false);
+      });
   };
 
   return (
@@ -88,11 +94,11 @@ const Auth = () => {
                 {error && <p style={{ color: "red", fontSize: "14px" }}>{error}</p>}
 
                 <div className="input-container">
-                  <label>Email / Username</label>
+                  <label>Email</label>
                   <input
-                    type="text"
+                    type="email"
                     name="email"
-                    placeholder="Enter your email address or username"
+                    placeholder="Enter your email"
                     value={adminForm.email}
                     onChange={handleAdminChange}
                     required
@@ -122,12 +128,12 @@ const Auth = () => {
                 {error && <p style={{ color: "red", fontSize: "14px" }}>{error}</p>}
 
                 <div className="input-container">
-                  <label>Employee ID</label>
+                  <label>Email</label>
                   <input
-                    type="text"
-                    name="employeeId"
-                    placeholder="Enter your employee ID"
-                    value={employeeForm.employeeId}
+                    type="email"
+                    name="email"
+                    placeholder="Enter your email"
+                    value={employeeForm.email}
                     onChange={handleEmployeeChange}
                     required
                   />

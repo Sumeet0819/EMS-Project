@@ -12,7 +12,7 @@ const employeeTaskSlice = createSlice({
   reducers: {
     // Load all tasks for an employee
     loadEmployeeTasks: (state, action) => {
-      state.tasks = action.payload;
+      state.tasks = Array.isArray(action.payload) ? action.payload : [];
       state.loading = false;
     },
     
@@ -23,7 +23,9 @@ const employeeTaskSlice = createSlice({
 
     // Update an existing task
     updateTask: (state, action) => {
-      const index = state.tasks.findIndex((t) => t.id === action.payload.id);
+      const index = state.tasks.findIndex(
+        (t) => t._id === action.payload._id || t.id === action.payload.id
+      );
       if (index !== -1) {
         state.tasks[index] = { ...state.tasks[index], ...action.payload };
       }
@@ -34,20 +36,25 @@ const employeeTaskSlice = createSlice({
       state.tasks = state.tasks.filter((t) => t.id !== action.payload);
     },
 
-    // Start a task (change status to inprogress)
+    // Start a task (change status to in-progress)
     startTask: (state, action) => {
-      const task = state.tasks.find((t) => t.id === action.payload);
+      const task = state.tasks.find(
+        (t) => t._id === action.payload || t.id === action.payload
+      );
       if (task) {
-        task.status = "inprogress";
-        task.startTime = Date.now();
+        task.status = "in-progress";
+        task.startTime = new Date();
       }
     },
 
-    // Submit a task (change status to done)
+    // Submit a task (change status to completed)
     submitTask: (state, action) => {
-      const task = state.tasks.find((t) => t.id === action.payload);
+      const task = state.tasks.find(
+        (t) => t._id === action.payload || t.id === action.payload
+      );
       if (task) {
-        task.status = "done";
+        task.status = "completed";
+        task.completedTime = new Date();
       }
     },
 
