@@ -89,6 +89,7 @@
 }
 .auth-wrapper .auth-right-container .auth-form .input-container {
   margin-bottom: var(--spacing-md);
+  position: relative;
 }
 .auth-wrapper .auth-right-container .auth-form .input-container label {
   font-size: var(--font-size-sm);
@@ -97,27 +98,61 @@
 }
 .auth-wrapper .auth-right-container .auth-form .input-container input {
   width: 100%;
-  padding: var(--spacing-sm);
-  border: 1px solid var(--secondary-color);
+  padding: 14px 16px;
+  border: none;
   border-radius: var(--border-radius-md);
   font-size: var(--font-size-sm);
+  background: var(--background-light);
+  transition: all var(--transition-slow);
+  outline: none;
+  box-shadow: var(--box-shadow-sm);
 }
+
+.auth-wrapper .auth-right-container .auth-form .input-container input:focus {
+  background: var(--background-hover);
+  box-shadow: var(--box-shadow-md);
+  transform: translateY(-1px);
+}
+
+.auth-wrapper .auth-right-container .auth-form .input-container input:hover {
+  background: var(--background-hover);
+}
+
 .auth-wrapper .auth-right-container .auth-form .input-container input::-moz-placeholder {
   font-size: var(--font-size-sm);
   color: var(--text-color-muted);
+  opacity: 0.7;
 }
+
 .auth-wrapper .auth-right-container .auth-form .input-container input::placeholder {
   font-size: var(--font-size-sm);
   color: var(--text-color-muted);
+  opacity: 0.7;
 }
+
 .auth-wrapper .auth-right-container .auth-form .button-ui {
   width: 100%;
-  padding: var(--spacing-sm);
+  padding: 12px 16px;
   background: var(--primary-color);
   color: var(--surface-color);
   border: none;
   border-radius: var(--border-radius-md);
   cursor: pointer;
   font-size: var(--font-size-base);
-  margin-top: var(--spacing-sm);
+  font-weight: var(--font-weight-medium);
+  margin-top: var(--spacing-md);
+  box-shadow: var(--box-shadow-sm);
+  transition: all var(--transition-base);
+}
+
+.auth-wrapper .auth-right-container .auth-form .button-ui:hover:not(:disabled) {
+  background: var(--primary-hover);
+  box-shadow: var(--box-shadow-md);
+  transform: translateY(-1px);
+}
+
+.auth-wrapper .auth-right-container .auth-form .button-ui:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
 }

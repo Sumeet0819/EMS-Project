@@ -91,7 +91,12 @@ const Auth = () => {
               <form className="auth-form" onSubmit={handleAdminSubmit}>
                 <h2>Admin Login</h2>
 
-                {error && <p style={{ color: "red", fontSize: "14px" }}>{error}</p>}
+                {error && (
+                  <div className="alert alert-error">
+                    <span className="alert-icon">×</span>
+                    <span className="alert-message">{error}</span>
+                  </div>
+                )}
 
                 <div className="input-container">
                   <label>Email</label>
@@ -125,7 +130,12 @@ const Auth = () => {
               <form className="auth-form" onSubmit={handleEmployeeSubmit}>
                 <h2>Employee Login</h2>
 
-                {error && <p style={{ color: "red", fontSize: "14px" }}>{error}</p>}
+                {error && (
+                  <div className="alert alert-error">
+                    <span className="alert-icon">×</span>
+                    <span className="alert-message">{error}</span>
+                  </div>
+                )}
 
                 <div className="input-container">
                   <label>Email</label>

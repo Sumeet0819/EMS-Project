@@ -64,58 +64,125 @@ a:hover {
   text-decoration: underline;
 }
 
-/* Button Styles */
-.btn {
-  display: inline-block;
-  font-weight: var(--font-weight-normal);
-  color: var(--text-color);
+/* ============================================
+   BUTTONS - Design System
+   ============================================ */
+.btn,
+button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  font-weight: var(--font-weight-medium);
   text-align: center;
   vertical-align: middle;
   cursor: pointer;
   user-select: none;
-  background-color: transparent;
-  border: 1px solid transparent;
-  padding: var(--spacing-sm) var(--spacing-md);
-  font-size: var(--font-size-base);
-  line-height: var(--line-height-base);
+  border: none;
+  padding: 12px 16px;
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
   border-radius: var(--border-radius-md);
-  transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out,
-    border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+  transition: all var(--transition-base);
+  outline: none;
+  font-family: var(--font-family-base);
 }
 
-.btn-primary {
+.btn-primary,
+.button-ui,
+.primary-btn {
   color: #fff;
   background-color: var(--primary-color);
-  border-color: var(--primary-color);
+  box-shadow: var(--box-shadow-sm);
 }
 
-.btn-primary:hover {
-  background-color: #0069d9;
-  border-color: #0062cc;
+.btn-primary:hover:not(:disabled),
+.button-ui:hover:not(:disabled),
+.primary-btn:hover:not(:disabled) {
+  background-color: var(--primary-hover);
+  box-shadow: var(--box-shadow-md);
+  transform: translateY(-1px);
 }
 
-/* Input Field Styles */
+.btn-secondary,
+.cancel-btn {
+  color: var(--text-color);
+  background-color: var(--surface-color);
+  border: 1px solid var(--border-color);
+}
+
+.btn-secondary:hover:not(:disabled),
+.cancel-btn:hover:not(:disabled) {
+  background-color: var(--background-color);
+  border-color: var(--text-color-muted);
+}
+
+button:disabled,
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ============================================
+   INPUT FIELDS - Design System
+   ============================================ */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="tel"],
+input[type="url"],
+select,
+textarea,
 .form-control {
   display: block;
   width: 100%;
-  padding: var(--spacing-sm) var(--spacing-md);
-  font-size: var(--font-size-base);
+  padding: 14px 16px;
+  font-size: var(--font-size-sm);
   line-height: var(--line-height-base);
   color: var(--text-color);
-  background-color: var(--surface-color);
+  background-color: var(--background-light);
   background-clip: padding-box;
-  border: 1px solid var(--secondary-color);
+  border: none;
   border-radius: var(--border-radius-md);
-  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+  transition: all var(--transition-slow);
+  outline: none;
+  box-shadow: var(--box-shadow-sm);
+  font-family: var(--font-family-base);
 }
 
-.form-control:focus {
-  border-color: var(--primary-color);
-  outline: 0;
-  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+input:hover,
+select:hover,
+textarea:hover {
+  background-color: var(--background-hover);
 }
 
-/* Card Styles */
+input:focus,
+select:focus,
+textarea:focus {
+  background-color: var(--background-hover);
+  box-shadow: var(--box-shadow-md);
+  transform: translateY(-1px);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-color-muted);
+  opacity: 0.7;
+  font-size: var(--font-size-sm);
+}
+
+input::-moz-placeholder,
+textarea::-moz-placeholder {
+  color: var(--text-color-muted);
+  opacity: 0.7;
+  font-size: var(--font-size-sm);
+}
+
+/* ============================================
+   CARDS - Design System
+   ============================================ */
 .card {
   position: relative;
   display: flex;
@@ -124,7 +191,126 @@ a:hover {
   word-wrap: break-word;
   background-color: var(--surface-color);
   background-clip: border-box;
-  border: 1px solid rgba(0, 0, 0, 0.125);
-  border-radius: var(--border-radius-lg);
+  border: none;
+  border-radius: var(--border-radius-md);
   box-shadow: var(--box-shadow-sm);
+  transition: all var(--transition-base);
+}
+
+.card:hover {
+  box-shadow: var(--box-shadow-md);
+}
+
+/* ============================================
+   BADGES & TAGS - Design System
+   ============================================ */
+.badge,
+.tag,
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  line-height: 1;
+  border-radius: var(--border-radius-full);
+  text-transform: capitalize;
+}
+
+.badge-primary {
+  background-color: var(--primary-color);
+  color: #fff;
+}
+
+.badge-success {
+  background-color: var(--success-color);
+  color: #fff;
+}
+
+.badge-error,
+.badge-danger {
+  background-color: var(--error-color);
+  color: #fff;
+}
+
+.badge-warning {
+  background-color: var(--warning-color);
+  color: var(--text-color);
+}
+
+.badge-secondary {
+  background-color: var(--background-color);
+  color: var(--text-color-muted);
+}
+
+/* ============================================
+   ALERTS - Design System
+   ============================================ */
+.alert {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: 12px 16px;
+  border-radius: var(--border-radius-md);
+  margin-bottom: var(--spacing-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-normal);
+  border-left: 4px solid;
+  box-shadow: var(--box-shadow-sm);
+}
+
+.alert-error {
+  background: var(--error-bg);
+  color: var(--error-color);
+  border-left-color: var(--error-color);
+  border: 1px solid rgba(220, 53, 69, 0.2);
+}
+
+.alert-success {
+  background: var(--success-bg);
+  color: var(--success-color);
+  border-left-color: var(--success-color);
+}
+
+.alert-warning {
+  background: var(--warning-bg);
+  color: var(--warning-color);
+  border-left-color: var(--warning-color);
+}
+
+.alert-info {
+  background: var(--info-bg);
+  color: var(--info-color);
+  border-left-color: var(--info-color);
+}
+
+.alert-icon {
+  font-size: 18px;
+  font-weight: var(--font-weight-bold);
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.alert-message {
+  flex: 1;
+  line-height: 1.5;
+}
+
+/* ============================================
+   ANIMATIONS - Design System
+   ============================================ */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

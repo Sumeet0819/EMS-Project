@@ -1,21 +1,16 @@
 import axios from "axios";
+import { store } from "../store/store";
+import { asyncLogoutuser } from "../store/actions/userActions";
 
 const instance = axios.create({
   baseURL: "https://ems-project-nu3f.onrender.com/api",
   withCredentials: true,
 });
 
-// Add request interceptor to include token
+// Request interceptor - ensure withCredentials is always true
 instance.interceptors.request.use(
   (config) => {
-    const token = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("token="))
-      ?.split("=")[1];
-    
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+    config.withCredentials = true;
     return config;
   },
   (error) => {
@@ -23,13 +18,28 @@ instance.interceptors.request.use(
   }
 );
 
-// Add response interceptor for error handling
+// Response interceptor - handle 401 errors globally
 instance.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    return response;
+  },
   (error) => {
-    if (error.response?.status === 401) {
+    // Handle 401 Unauthorized errors
+    if (error.response && error.response.status === 401) {
+      console.error("Unauthorized access - Session expired or invalid token");
+      
+      // Clear local storage
       localStorage.removeItem("employee");
-      window.location.href = "/";
+      
+      // Dispatch logout action
+      if (store) {
+        store.dispatch(asyncLogoutuser());
+      }
+      
+      // Redirect to login page if not already there
+      if (window.location.pathname !== "/") {
+        window.location.href = "/";
+      }
     }
     return Promise.reject(error);
   }

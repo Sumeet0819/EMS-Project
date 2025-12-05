@@ -16,10 +16,13 @@ export const asyncLoadEmployees = () => async (dispatch, getState) => {
     const employees = Array.isArray(data.data) ? data.data : data;
     dispatch(loadEmployees(employees));
     dispatch(setError(null));
-  } catch (error) {
-    console.log(error);
-    dispatch(setError(error.message || "Failed to load employees"));
     dispatch(setLoading(false));
+  } catch (error) {
+    console.error("Load employees error:", error);
+    const errorMessage = error.response?.data?.message || error.message || "Failed to load employees";
+    dispatch(setError(errorMessage));
+    dispatch(setLoading(false));
+    throw error;
   }
 };
 
@@ -39,10 +42,12 @@ export const asyncCreateEmployee = (employee) => async (dispatch, getState) => {
     const { data } = await axios.post("/employees", employeeData);
     dispatch(createEmployee(data.data || data));
     dispatch(setError(null));
+    dispatch(setLoading(false));
     return data;
   } catch (error) {
-    console.log(error);
-    dispatch(setError(error.message || "Failed to create employee"));
+    console.error("Create employee error:", error);
+    const errorMessage = error.response?.data?.message || error.message || "Failed to create employee";
+    dispatch(setError(errorMessage));
     dispatch(setLoading(false));
     throw error;
   }

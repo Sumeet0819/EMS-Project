@@ -60,7 +60,11 @@ async function loginUser(req, res) {
     return res.status(400).json({ message: "Invalid credentials" });
   }
   const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
-  res.cookie("token", token);
+  res.cookie("token", token, {
+    httpOnly: true,
+    secure: true,       // Required for HTTPS (Render)
+    sameSite: "none",   // Required for cross-site from localhost to Render
+  });
   res.status(200).json({
     message: "User logged in successfully",
     employee: {

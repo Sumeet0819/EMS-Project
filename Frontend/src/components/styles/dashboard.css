@@ -12,12 +12,19 @@
 }
 
 .dashboard-container {
-  padding: var(--spacing-md);
+  padding: var(--spacing-xl);
+}
+
+.dashboard-container h1 {
+  font-size: 2rem;
+  font-weight: var(--font-weight-bold);
+  color: var(--text-color);
+  margin-bottom: var(--spacing-sm);
 }
 
 .subtitle {
-  margin-top: var(--spacing-sm);
-  margin-bottom: var(--spacing-md);
+  margin-top: var(--spacing-xs);
+  margin-bottom: var(--spacing-xl);
   color: var(--text-color-muted);
   font-size: var(--font-size-sm);
 }
