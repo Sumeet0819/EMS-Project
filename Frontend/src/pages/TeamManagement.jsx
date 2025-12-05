@@ -12,6 +12,7 @@ import CreateEmployee from "../components/CreateEmployee";
 import EmployeeCard from "../components/EmployeeCard";
 import "../components/styles/TeamManagement.css";
 import "../components/styles/EmployeeCard.css";
+import {toast ,Toaster } from "sonner"
 
 const TeamManagement = () => {
   const dispatch = useDispatch();
@@ -29,14 +30,36 @@ const TeamManagement = () => {
     setCreateEmployee(true);
   };
 
-  const handleDeleteEmployee = (id) => {
-    if (window.confirm("Are you sure you want to delete this employee?")) {
-      dispatch(asyncDeleteEmployee(id)).then(() => {
-        // Reload employees after deletion
-        dispatch(asyncLoadEmployees());
-      });
-    }
-  };
+const handleDeleteEmployee = (id) => {
+  toast.custom((t) => (
+    <div className="confirm-toast">
+      <p>Are you sure you want to delete this employee?</p>
+
+      <div className="confirm-actions">
+        <button
+          className="confirm-yes"
+          onClick={() => {
+            toast.dismiss(t);
+
+            dispatch(asyncDeleteEmployee(id)).then(() => {
+              dispatch(asyncLoadEmployees());
+              toast.success("Employee deleted");
+            });
+          }}
+        >
+          Yes
+        </button>
+
+        <button
+          className="confirm-no"
+          onClick={() => toast.dismiss(t)}
+        >
+          No
+        </button>
+      </div>
+    </div>
+  ));
+};
 
   const handleEdit = (employee) => {
     setSelectedEmployee(employee);
@@ -47,6 +70,7 @@ const TeamManagement = () => {
     setCreateEmployee(false);
     // Reload employees after creation
     dispatch(asyncLoadEmployees());
+  
   };
 
   const handleUpdateEmployee = (e) => {
@@ -62,6 +86,7 @@ const TeamManagement = () => {
     };
     dispatch(asyncUpdateEmployee(updatedEmployee));
     setEditModalOpen(false);
+      toast.success("Employee Details Updated Successfully")
   };
 
   if (loading) return <div className="team-layout"><p>Loading employees...</p></div>;

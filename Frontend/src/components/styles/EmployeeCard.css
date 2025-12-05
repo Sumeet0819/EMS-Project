@@ -1,78 +1,78 @@
 .employee-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1rem;
+  gap: var(--spacing-md);
 }
 
 .employee-card {
-  background-color: #fff;
-  border-radius: 6px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  padding: 1.2rem;
+  background-color: var(--surface-color);
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--box-shadow-sm);
+  padding: var(--spacing-md);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
 }
 
 .employee-card .employee-info {
-  margin-bottom: 1rem;
+  margin-bottom: var(--spacing-md);
 }
 
 .employee-card .employee-name {
-  font-size: 1.2rem;
-  font-weight: 500;
-  margin-bottom: 0.5rem;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-medium);
+  margin-bottom: var(--spacing-sm);
 }
 
 .employee-card .employee-email {
-  color: #666;
-  font-size: 0.9rem;
-  margin-bottom: 1rem;
+  color: var(--text-color-muted);
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--spacing-md);
 }
 
 .employee-card .role-badge {
-  padding: 0.25rem 0.75rem;
+  padding: var(--spacing-xs) var(--spacing-sm);
   border-radius: 12px;
-  font-size: 0.875rem;
-  font-weight: 500;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
   text-transform: capitalize;
 }
 
 .employee-card .admin-role {
-  background-color: #d1e7dd;
-  color: #0f5132;
+  background-color: var(--success-color);
+  color: var(--surface-color);
 }
 
 .employee-card .employee-role {
-  background-color: #f8d7da;
-  color: #842029;
+  background-color: var(--error-color);
+  color: var(--surface-color);
 }
 
 .employee-card .actions {
   display: flex;
   justify-content: flex-end;
-  gap: 0.5rem;
+  gap: var(--spacing-sm);
 }
 
 .employee-card .icon-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer; 
-  font-size: 14px; 
-  color: #6b7280;
-  padding: 8px 8px;
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  color: var(--text-color-muted);
+  padding: var(--spacing-sm);
   border-radius: 50%;
-  background-color: #f3f4f6;
+  background-color: var(--background-color);
   transition: all 0.2s ease-in-out;
 }
 
 .employee-card .icon-btn:hover {
-   background-color: #e5e7eb;
+  background-color: #e5e7eb;
   scale: 1.1;
 }
 
 .employee-card .icon-btn.delete:hover {
-  background-color: #f8d7da;
-  color: #842029;
+  background-color: var(--error-color);
+  color: var(--surface-color);
 }

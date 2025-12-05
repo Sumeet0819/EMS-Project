@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { asyncCreateEmployee } from "../store/actions/employeeActions";
 import "./CreateEmployee.css";
+import { toast } from "sonner";
 
 const CreateEmployee = ({ onClose }) => {
   const dispatch = useDispatch();
@@ -21,16 +22,10 @@ const CreateEmployee = ({ onClose }) => {
     e.preventDefault();
     try {
       await dispatch(asyncCreateEmployee(form));
-      alert("Employee created successfully!");
-      setForm({
-        firstName: "",
-        lastName: "",
-        email: "",
-        password: "default123",
-      });
+      toast.success("Employee Created Successfully")
       onClose();
     } catch (error) {
-      alert("Failed to create employee: " + error.message);
+       toast.error("Failed to Create Employee")
     }
   };
 

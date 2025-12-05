@@ -29,7 +29,11 @@ async function registerUser(req, res) {
   });
   await user.save();
   const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
-  res.cookie("token", token);
+    res.cookie("token", token, {
+    httpOnly: true,
+    secure: true,       // Required for HTTPS (Render)
+    sameSite: "none",   // Required for cross-site from localhost to Render
+  });
   res.status(201).json({
     message: "User registered successfully",
     employee: {

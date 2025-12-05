@@ -1,10 +1,11 @@
 import React from 'react'
-import Auth from './pages/Auth'
-import'./App.css'
+import './global.css'
 import MainRoutes from './routes/MainRoutes'
+import { Toaster } from 'sonner'
 const App = () => {
   return (
     <>
+     <Toaster position="bottom-right" richColors />
     <MainRoutes/>
     </>
   )

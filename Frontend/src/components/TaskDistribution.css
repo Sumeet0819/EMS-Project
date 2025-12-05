@@ -1,43 +1,49 @@
 .task-dist-card {
-  background: #ffffff;
-  padding: 22px;
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+  background: var(--surface-color);
+  padding: var(--spacing-lg);
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--box-shadow-sm);
 }
 
 .task-dist-card h3 {
-  font-size: 18px;
-  font-weight: 600;
-  margin-bottom: 20px;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  margin-bottom: var(--spacing-md);
 }
 
 .bar-group {
-  margin-bottom: 28px;
+  margin-bottom: var(--spacing-lg);
   position: relative;
 }
 
 .bar-group p {
-  margin-bottom: 6px;
-  font-size: 14px;
-  color: #444;
-  font-weight: 500;
+  margin-bottom: var(--spacing-xs);
+  font-size: var(--font-size-sm);
+  color: var(--text-color);
+  font-weight: var(--font-weight-medium);
 }
 
 .bar {
   height: 10px;
-  background: #e5e7eb;
-  border-radius: 6px;
+  background: var(--background-color);
+  border-radius: var(--border-radius-md);
   position: relative;
   overflow: hidden;
 }
 
-.completed { background: #4caf50; }
-.progress  { background: #f4a300; }
-.pending   { background: #e53935; }
+.completed {
+  background: var(--success-color);
+}
+.progress {
+  background: var(--warning-color);
+}
+.pending {
+  background: var(--error-color);
+}
 
 .bar-group span {
-  font-size: 13px;
-  color: #6b7280;
+  font-size: var(--font-size-sm);
+  color: var(--text-color-muted);
   position: absolute;
   right: 0;
   top: -2px;

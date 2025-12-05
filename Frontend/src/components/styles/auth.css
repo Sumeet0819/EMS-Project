@@ -1,26 +1,26 @@
 .auth-wrapper {
   width: 100%;
   height: 100vh;
-  background: #FAFBFD;
+  background: var(--background-color);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px;
+  padding: var(--spacing-lg);
   flex-direction: row;
 }
 .auth-wrapper .auth-left-container {
   width: 50%;
   height: 100%;
-  padding: 1rem;
+  padding: var(--spacing-md);
   -o-object-fit: contain;
-     object-fit: contain;
+  object-fit: contain;
   -o-object-position: center;
-     object-position: center;
+  object-position: center;
 }
 .auth-wrapper .auth-left-container img {
   width: 100%;
   height: 100%;
-  border-radius: 12px;
+  border-radius: var(--border-radius-lg);
 }
 .auth-wrapper .auth-right-container {
   width: 50%;
@@ -35,16 +35,16 @@
 .auth-wrapper .auth-right-container .auth-header {
   display: flex;
   justify-content: center;
-  gap: 12px;
+  gap: var(--spacing-md);
   width: 100%;
-  margin-bottom: 2rem;
+  margin-bottom: var(--spacing-lg);
 }
 .auth-wrapper .auth-right-container .auth-header .toggle {
   width: 100%;
   max-width: 260px;
-  padding: 6px;
+  padding: var(--spacing-xs);
   display: flex;
-  gap: 2rem;
+  gap: var(--spacing-lg);
   cursor: pointer;
   transition: all 0.25s ease;
   /* ACTIVE TAB */
@@ -52,30 +52,30 @@
 .auth-wrapper .auth-right-container .auth-header .toggle span {
   flex: 1;
   text-align: center;
-  padding: 6px 0;
-  font-size: 14px;
+  padding: var(--spacing-xs) 0;
+  font-size: var(--font-size-sm);
   -webkit-user-select: none;
-     -moz-user-select: none;
-          user-select: none;
+  -moz-user-select: none;
+  user-select: none;
   opacity: 0.45;
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
   border-bottom: 2px solid transparent;
   transition: 0.25s ease;
 }
 .auth-wrapper .auth-right-container .auth-header .toggle span.active {
   opacity: 1;
-  color: #111;
-  border-bottom: 1px solid #111;
+  color: var(--text-color);
+  border-bottom: 1px solid var(--text-color);
 }
 .auth-wrapper .auth-right-container .auth-card {
   width: 100%;
   height: 400px;
   max-width: 400px;
-  border-radius: 6px;
+  border-radius: var(--border-radius-md);
   overflow: hidden;
 }
 .auth-wrapper .auth-right-container .auth-body {
-  padding: 22px 24px;
+  padding: var(--spacing-lg) var(--spacing-lg);
   height: 100%;
 }
 .auth-wrapper .auth-right-container .auth-form {
@@ -83,41 +83,41 @@
 }
 .auth-wrapper .auth-right-container .auth-form h2 {
   text-align: center;
-  margin-bottom: 40px;
-  font-weight: 600;
-  font-size: 20px;
+  margin-bottom: var(--spacing-xl);
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-lg);
 }
 .auth-wrapper .auth-right-container .auth-form .input-container {
-  margin-bottom: 14px;
+  margin-bottom: var(--spacing-md);
 }
 .auth-wrapper .auth-right-container .auth-form .input-container label {
-  font-size: 14px;
-  margin-bottom: 6px;
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--spacing-xs);
   display: block;
 }
 .auth-wrapper .auth-right-container .auth-form .input-container input {
   width: 100%;
-  padding: 10px;
-  border: 1px solid #e1e1e1;
-  border-radius: 6px;
-  font-size: 0.9rem;
+  padding: var(--spacing-sm);
+  border: 1px solid var(--secondary-color);
+  border-radius: var(--border-radius-md);
+  font-size: var(--font-size-sm);
 }
 .auth-wrapper .auth-right-container .auth-form .input-container input::-moz-placeholder {
-  font-size: 0.8rem;
-  color: #bfbfbf;
+  font-size: var(--font-size-sm);
+  color: var(--text-color-muted);
 }
 .auth-wrapper .auth-right-container .auth-form .input-container input::placeholder {
-  font-size: 0.8rem;
-  color: #bfbfbf;
+  font-size: var(--font-size-sm);
+  color: var(--text-color-muted);
 }
 .auth-wrapper .auth-right-container .auth-form .button-ui {
   width: 100%;
-  padding: 12px;
-  background: #111;
-  color: #fff;
+  padding: var(--spacing-sm);
+  background: var(--primary-color);
+  color: var(--surface-color);
   border: none;
-  border-radius: 6px;
+  border-radius: var(--border-radius-md);
   cursor: pointer;
-  font-size: 15px;
-  margin-top: 10px;
+  font-size: var(--font-size-base);
+  margin-top: var(--spacing-sm);
 }

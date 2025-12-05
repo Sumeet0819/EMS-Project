@@ -1,14 +1,14 @@
 .activity-card {
-  background: #ffffff;
-  border-radius: 6px;
-  padding: 22px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+  background: var(--surface-color);
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-lg);
+  box-shadow: var(--box-shadow-sm);
 }
 
 .activity-card h3 {
-  font-size: 18px;
-  font-weight: 600;
-  margin-bottom: 18px;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  margin-bottom: var(--spacing-md);
 }
 
 .activity-card ul {
@@ -18,8 +18,8 @@
 .activity-card li {
   display: flex;
   justify-content: space-between;
-  padding: 14px 0;
-  border-bottom: 1px solid #f0f0f0;
+  padding: var(--spacing-md) 0;
+  border-bottom: 1px solid var(--background-color);
 }
 
 .activity-card li:last-child {
@@ -27,15 +27,15 @@
 }
 
 .activity-card strong {
-  font-size: 15px;
+  font-size: var(--font-size-base);
 }
 
 .activity-card p {
-  font-size: 13px;
-  color: #6b7280;
+  font-size: var(--font-size-sm);
+  color: var(--text-color-muted);
 }
 
 .time {
-  color: #9ca3af;
-  font-size: 13px;
+  color: var(--text-color-muted);
+  font-size: var(--font-size-sm);
 }

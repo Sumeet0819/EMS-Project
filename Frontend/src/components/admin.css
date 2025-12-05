@@ -2,9 +2,9 @@
   display: flex;
   width: 100%;
   height: 100vh;
-  background: #f5f6f8;
+  background: var(--background-color);
   overflow: hidden;
-  font-family: "Inter", sans-serif;
+  font-family: var(--font-family-base);
 }
 
 .admin-right {
@@ -17,7 +17,7 @@
 
 .admin-content {
   flex: 1;
-  padding: 28px;
+  padding: var(--spacing-lg);
   overflow-y: auto;
 }
 
