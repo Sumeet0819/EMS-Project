@@ -27,7 +27,7 @@
   background: var(--primary-color);
   color: white;
   padding: 12px 16px;
-  border-radius: var(--border-radius-md);
+  border-radius: var(--border-radius-sm);
   border: none;
   cursor: pointer;
   font-weight: var(--font-weight-medium);
@@ -57,7 +57,7 @@
   flex-direction: column;
   justify-content: space-between;
   background: var(--surface-color);
-  border-radius: var(--border-radius-md);
+  border-radius: var(--border-radius-sm);
   padding: var(--spacing-lg);
   box-shadow: var(--box-shadow-sm);
   transition: all var(--transition-base);
@@ -67,60 +67,6 @@
 .task-card:hover {
   box-shadow: var(--box-shadow-md);
   transform: translateY(-2px);
-}
-
-.employee-info h3 {
-  font-size: var(--font-size-base);
-  font-weight: var(--font-weight-bold);
-  margin: 0 0 var(--spacing-xs) 0;
-}
-
-.employee-info .email {
-  font-size: var(--font-size-sm);
-  color: var(--text-color-muted);
-  margin: 0;
-}
-
-.task-count {
-  font-size: var(--font-size-sm);
-  color: var(--text-color);
-  margin-bottom: var(--spacing-md);
-  padding: var(--spacing-sm) var(--spacing-md);
-  background: var(--background-color);
-  border-radius: var(--border-radius-md);
-  text-align: center;
-}
-
-.task-count strong {
-  font-size: var(--font-size-lg);
-  color: var(--primary-color);
-}
-
-.task-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-sm);
-  max-height: 400px;
-  overflow-y: auto;
-}
-
-.task-item {
-  padding: var(--spacing-sm);
-  background: var(--background-color);
-  border-radius: var(--border-radius-md);
-  border-left: 3px solid var(--secondary-color);
-}
-
-.task-item.status-pending {
-  border-left-color: var(--error-color);
-}
-
-.task-item.status-in-progress {
-  border-left-color: var(--warning-color);
-}
-
-.task-item.status-completed {
-  border-left-color: var(--success-color);
 }
 
 .task-header {
@@ -140,7 +86,7 @@
 
 .status {
   padding: 6px 12px;
-  border-radius: var(--border-radius-full);
+  border-radius: var(--border-radius-sm);
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-medium);
   white-space: nowrap;
@@ -191,7 +137,7 @@
   font-size: var(--font-size-sm);
   color: var(--text-color-muted);
   padding: 8px;
-  border-radius: var(--border-radius-md);
+  border-radius: var(--border-radius-sm);
   background-color: var(--background-light);
   transition: all var(--transition-base);
   width: 32px;
@@ -212,7 +158,7 @@
 
 .priority {
   padding: 6px 12px;
-  border-radius: var(--border-radius-full);
+  border-radius: var(--border-radius-sm);
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-medium);
   text-transform: capitalize;
@@ -263,15 +209,84 @@
   color: var(--text-color-muted);
 }
 
-@media (max-width: 768px) {
-  .employees-tasks-grid {
-    grid-template-columns: 1fr;
+@media (max-width: 1024px) {
+  .tasks-grid {
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   }
+}
 
+@media (max-width: 768px) {
   .task-header-bar {
     flex-direction: column;
     align-items: flex-start;
     gap: var(--spacing-md);
+  }
+
+  .tasks-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .task-card {
+    padding: var(--spacing-md);
+  }
+
+  .task-header {
+    flex-wrap: wrap;
+  }
+
+  .task-header h4 {
+    font-size: var(--font-size-sm);
+  }
+
+  .task-meta {
+    flex-wrap: wrap;
+    gap: var(--spacing-xs);
+  }
+}
+
+@media (max-width: 480px) {
+  .task-page-wrapper {
+    padding: var(--spacing-sm);
+  }
+
+  .task-header-bar {
+    gap: var(--spacing-sm);
+  }
+
+  .task-title {
+    font-size: 1.5rem;
+  }
+
+  .task-subtitle {
+    font-size: var(--font-size-xs);
+  }
+
+  .add-task-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .task-card {
+    padding: var(--spacing-sm);
+  }
+
+  .task-header h4 {
+    font-size: var(--font-size-xs);
+  }
+
+  .task-desc {
+    font-size: var(--font-size-xs);
+  }
+
+  .status,
+  .priority {
+    font-size: 10px;
+    padding: 4px 8px;
+  }
+
+  .deadline {
+    font-size: 10px;
+    padding: 2px 6px;
   }
 }
 
@@ -294,7 +309,7 @@
   width: 100%;
   max-width: 920px;
   background: var(--surface-color);
-  border-radius: var(--border-radius-lg);
+  border-radius: var(--border-radius-sm);
   padding: var(--spacing-xl);
   box-shadow: var(--box-shadow-xl);
   animation: fadeIn var(--transition-base);
@@ -311,7 +326,7 @@
 
 .task-modal button.close-btn {
   font-size: var(--font-size-sm);
-  border-radius: var(--border-radius-md);
+  border-radius: var(--border-radius-sm);
   background: var(--error-bg);
   color: var(--error-color);
   border: none;
@@ -325,4 +340,254 @@
   background: var(--error-color);
   color: white;
   box-shadow: var(--box-shadow-sm);
+}
+
+/* Task Modal Header */
+.task-modal .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+}
+
+.task-modal .modal-header h2 {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-color);
+  margin: 0;
+}
+
+.task-modal .sub-text {
+  margin-top: var(--spacing-xs);
+  margin-bottom: var(--spacing-md);
+  font-size: var(--font-size-sm);
+  color: var(--text-color-muted);
+  line-height: 1.5;
+}
+
+/* Task Modal Actions */
+.task-modal-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-xl);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--border-light);
+}
+
+.edit-btn-modal,
+.delete-btn-modal {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: 10px 16px;
+  border: none;
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  flex: 1;
+}
+
+.edit-btn-modal {
+  background: var(--primary-color);
+  color: white;
+  box-shadow: var(--box-shadow-sm);
+}
+
+.edit-btn-modal:hover {
+  background: var(--primary-hover);
+  box-shadow: var(--box-shadow-md);
+  transform: translateY(-1px);
+}
+
+.delete-btn-modal {
+  background: var(--error-bg);
+  color: var(--error-color);
+  border: 1px solid var(--error-color);
+}
+
+.delete-btn-modal:hover {
+  background: var(--error-color);
+  color: white;
+  box-shadow: var(--box-shadow-sm);
+}
+
+/* Task Modal Form Styles */
+.task-modal .task-form {
+  margin-top: var(--spacing-md);
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-md);
+}
+
+.task-modal .form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.task-modal .form-group.full {
+  grid-column: span 2;
+}
+
+.task-modal .form-group label {
+  margin-bottom: var(--spacing-xs);
+  font-size: var(--font-size-sm);
+  color: var(--text-color);
+  font-weight: var(--font-weight-medium);
+}
+
+.task-modal .form-group input,
+.task-modal .form-group select,
+.task-modal .form-group textarea {
+  padding: 14px 16px;
+  border: none;
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-sm);
+  resize: none;
+  background: var(--background-light);
+  box-shadow: var(--box-shadow-sm);
+  transition: all var(--transition-slow);
+  outline: none;
+  font-family: var(--font-family-base);
+}
+
+.task-modal .form-group textarea {
+  height: 120px;
+}
+
+.task-modal .form-group input:hover,
+.task-modal .form-group select:hover,
+.task-modal .form-group textarea:hover {
+  background: var(--background-hover);
+}
+
+.task-modal .form-group input:focus,
+.task-modal .form-group select:focus,
+.task-modal .form-group textarea:focus {
+  background: var(--background-hover);
+  box-shadow: var(--box-shadow-md);
+  transform: translateY(-1px);
+}
+
+.task-modal .task-btn-row {
+  grid-column: span 2;
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-xl);
+}
+
+.task-modal .cancel-btn {
+  padding: 12px 16px;
+  border: 1px solid var(--border-color);
+  background: var(--surface-color);
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-color);
+  transition: all var(--transition-base);
+}
+
+.task-modal .cancel-btn:hover {
+  background: var(--background-color);
+  border-color: var(--text-color-muted);
+}
+
+.task-modal .primary-btn {
+  padding: 12px 16px;
+  background: var(--primary-color);
+  color: #fff;
+  border: none;
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  box-shadow: var(--box-shadow-sm);
+  transition: all var(--transition-base);
+}
+
+.task-modal .primary-btn:hover:not(:disabled) {
+  background: var(--primary-hover);
+  box-shadow: var(--box-shadow-md);
+  transform: translateY(-1px);
+}
+
+.task-modal .primary-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Confirm Toast Styles */
+.confirm-toast {
+  background: var(--surface-color);
+  border-radius: var(--border-radius-sm);
+  padding: var(--spacing-md);
+  box-shadow: var(--box-shadow-lg);
+  min-width: 300px;
+  max-width: 400px;
+}
+
+.confirm-toast p {
+  margin: 0 0 var(--spacing-sm) 0;
+  color: var(--text-color);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+.confirm-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  justify-content: flex-end;
+  margin-top: var(--spacing-md);
+}
+
+.confirm-yes,
+.confirm-no {
+  padding: 8px 16px;
+  border: none;
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+
+.confirm-yes {
+  background: var(--error-color);
+  color: white;
+}
+
+.confirm-yes:hover {
+  background: #c82333;
+  box-shadow: var(--box-shadow-sm);
+}
+
+.confirm-no {
+  background: var(--background-light);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+}
+
+.confirm-no:hover {
+  background: var(--background-hover);
+}
+
+/* Mobile Responsive */
+@media (max-width: 600px) {
+  .task-modal .task-form {
+    grid-template-columns: 1fr;
+  }
+  .task-modal .form-group.full {
+    grid-column: span 1;
+  }
+  .task-modal .task-btn-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .task-modal-actions {
+    flex-direction: column;
+  }
 }

@@ -1,26 +1,18 @@
 import React from "react";
-import { useDispatch } from "react-redux";
-import { useNavigate } from "react-router-dom";
-import { RiLoginBoxLine } from "@remixicon/react";
-import { asyncLogoutuser } from "../store/actions/userActions";
+import { RiMenuLine, RiCloseLine } from "@remixicon/react";
 import "./Header.css";
 
-const Header = () => {
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    dispatch(asyncLogoutuser());
-    navigate("/");
-  };
-
+const Header = ({ sidebarOpen, onToggleSidebar }) => {
   return (
     <header className="header">
-      <span>Welcome, Admin</span>
-      <button className="logout" onClick={handleLogout}>
-        <RiLoginBoxLine />
-        Logout
+      <button 
+        className="header-menu-toggle"
+        onClick={onToggleSidebar}
+        aria-label="Toggle menu"
+      >
+        {sidebarOpen ? <RiCloseLine size={20} /> : <RiMenuLine size={20} />}
       </button>
+      <span>Welcome, Admin</span>
     </header>
   );
 };

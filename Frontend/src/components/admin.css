@@ -5,6 +5,25 @@
   background: var(--background-color);
   overflow: hidden;
   font-family: var(--font-family-base);
+  position: relative;
+}
+
+.sidebar-wrapper {
+  position: relative;
+  z-index: 1000;
+}
+
+
+.admin-mobile-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  backdrop-filter: blur(2px);
 }
 
 .admin-right {
@@ -21,8 +40,42 @@
   overflow-y: auto;
 }
 
+@media (max-width: 1024px) {
+  .admin-right {
+    margin-left: 220px;
+  }
+
+  .admin-content {
+    padding: var(--spacing-md);
+  }
+}
+
 @media (max-width: 768px) {
+  .admin-mobile-overlay {
+    display: block;
+  }
+
+  .header-menu-toggle {
+    display: flex;
+  }
+
+  .sidebar-wrapper {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+    width: 250px;
+  }
+
+  .sidebar-wrapper.sidebar-open .sidebar {
+    transform: translateX(0);
+  }
+
   .admin-right {
     margin-left: 0;
+  }
+
+  .admin-content {
+    padding: var(--spacing-sm);
   }
 }

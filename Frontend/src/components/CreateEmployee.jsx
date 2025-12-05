@@ -94,7 +94,13 @@ const CreateEmployee = ({ onClose }) => {
               Cancel
             </button>
             <button type="submit" className="primary-btn" disabled={loading}>
-              {loading ? "Creating..." : "Add Employee"}
+              {loading ? (
+                <span className="button-loader">
+                  <span className="spinner"></span> Creating...
+                </span>
+              ) : (
+                "Add Employee"
+              )}
             </button>
           </div>
         </form>

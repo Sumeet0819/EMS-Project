@@ -23,17 +23,27 @@ const employeeTaskSlice = createSlice({
 
     // Update an existing task
     updateTask: (state, action) => {
+      const updatedTask = action.payload;
+      const taskId = updatedTask._id || updatedTask.id;
+      if (!taskId) return;
+      
       const index = state.tasks.findIndex(
-        (t) => t._id === action.payload._id || t.id === action.payload.id
+        (t) => (t._id === taskId) || (t.id === taskId)
       );
+      
       if (index !== -1) {
-        state.tasks[index] = { ...state.tasks[index], ...action.payload };
+        // Update existing task
+        state.tasks[index] = { ...state.tasks[index], ...updatedTask };
       }
+      // Don't add new tasks here - only update existing ones
     },
 
     // Delete a task
     deleteTask: (state, action) => {
-      state.tasks = state.tasks.filter((t) => t.id !== action.payload);
+      const taskId = action.payload;
+      state.tasks = state.tasks.filter(
+        (t) => t._id !== taskId && t.id !== taskId
+      );
     },
 
     // Start a task (change status to in-progress)
@@ -60,9 +70,12 @@ const employeeTaskSlice = createSlice({
 
     // Update timer
     updateTaskTimer: (state, action) => {
-      const task = state.tasks.find((t) => t.id === action.payload.id);
+      const { id, timer } = action.payload;
+      const task = state.tasks.find(
+        (t) => t._id === id || t.id === id
+      );
       if (task) {
-        task.timer = action.payload.timer;
+        task.timer = timer;
       }
     },
 

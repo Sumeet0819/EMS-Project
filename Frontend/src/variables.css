@@ -42,12 +42,12 @@
   --spacing-xl: 2rem;
   --spacing-2xl: 3rem;
 
-  /* Border Radius Scale */
+  /* Border Radius Scale - Small Boxy Design */
   --border-radius-sm: 0.25rem;
-  --border-radius-md: 0.5rem;
-  --border-radius-lg: 0.75rem;
-  --border-radius-xl: 1rem;
-  --border-radius-full: 9999px;
+  --border-radius-md: 0.25rem;
+  --border-radius-lg: 0.25rem;
+  --border-radius-xl: 0.25rem;
+  --border-radius-full: 0.25rem;
 
   /* Shadow Tokens - Subtle and Modern */
   --box-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);

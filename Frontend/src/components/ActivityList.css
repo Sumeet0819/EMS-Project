@@ -1,6 +1,6 @@
 .activity-card {
   background: var(--surface-color);
-  border-radius: var(--border-radius-md);
+  border-radius: var(--border-radius-sm);
   padding: var(--spacing-xl);
   box-shadow: var(--box-shadow-sm);
   transition: all var(--transition-base);
@@ -61,4 +61,45 @@
   color: var(--text-color-muted);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-normal);
+}
+
+/* RESPONSIVE ACTIVITY LIST */
+@media (max-width: 768px) {
+  .activity-card {
+    padding: var(--spacing-md);
+  }
+
+  .activity-card h3 {
+    font-size: var(--font-size-base);
+    margin-bottom: var(--spacing-md);
+  }
+
+  .activity-card li {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm) 0;
+  }
+
+  .time {
+    font-size: var(--font-size-xs);
+  }
+}
+
+@media (max-width: 480px) {
+  .activity-card {
+    padding: var(--spacing-sm);
+  }
+
+  .activity-card h3 {
+    font-size: var(--font-size-sm);
+  }
+
+  .activity-card strong {
+    font-size: var(--font-size-sm);
+  }
+
+  .activity-card p {
+    font-size: var(--font-size-xs);
+  }
 }

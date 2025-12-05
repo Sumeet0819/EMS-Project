@@ -142,7 +142,13 @@ const CreateTask = ({ onCancel, onSubmit, employees: passedEmployees }) => {
               Cancel
             </button>
             <button type="submit" className="primary-btn" disabled={loading || employees.length === 0}>
-              Create Task
+              {loading ? (
+                <span className="button-loader">
+                  <span className="spinner"></span> Creating...
+                </span>
+              ) : (
+                "Create Task"
+              )}
             </button>
           </div>
         </form>

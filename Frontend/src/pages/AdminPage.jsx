@@ -8,6 +8,7 @@ import Sidebar from "../components/Sidebar";
 
 const AdminPage = () => {
   const [activePage, setActivePage] = useState("dashboard");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const renderPage = () => {
     switch (activePage) {
@@ -24,10 +25,29 @@ const AdminPage = () => {
 
   return (
     <div className="admin-layout">
-      <Sidebar onChangePage={setActivePage} active={activePage} />
+      {/* MOBILE OVERLAY */}
+      {sidebarOpen && (
+        <div 
+          className="admin-mobile-overlay"
+          onClick={() => setSidebarOpen(false)}
+        ></div>
+      )}
+
+      <div className={`sidebar-wrapper ${sidebarOpen ? "sidebar-open" : ""}`}>
+        <Sidebar 
+          onChangePage={(page) => {
+            setActivePage(page);
+            setSidebarOpen(false);
+          }} 
+          active={activePage} 
+        />
+      </div>
 
       <div className="admin-right">
-        <Header />
+        <Header 
+          sidebarOpen={sidebarOpen}
+          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+        />
 
         <div className="admin-content">{renderPage()}</div>
       </div>

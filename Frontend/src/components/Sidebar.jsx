@@ -1,8 +1,19 @@
 import React from "react";
+import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import "../components/styles/sidebar.css";
-import { RiDashboard2Fill, RiDashboardLine, RiGroupLine, RiTeamLine } from "@remixicon/react";
+import { RiDashboardLine, RiGroupLine, RiLogoutBoxLine } from "@remixicon/react";
+import { asyncLogoutuser } from "../store/actions/userActions";
 
 const Sidebar = ({ onChangePage, active }) => {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    dispatch(asyncLogoutuser());
+    navigate("/");
+  };
+
   return (
     <aside className="sidebar">
       <h2 className="brand">Admin Panel</h2>
@@ -21,13 +32,20 @@ const Sidebar = ({ onChangePage, active }) => {
         >
           <RiGroupLine size={16}/>Team Management
         </button>
-                <button
+        <button
           className={active === "task" ? "active" : ""}
           onClick={() => onChangePage("task")}
         >
           <RiGroupLine size={16}/>Task Management
         </button>
       </nav>
+
+      <div className="sidebar-footer">
+        <button className="logout-btn" onClick={handleLogout}>
+          <RiLogoutBoxLine size={16} />
+          Logout
+        </button>
+      </div>
     </aside>
   );
 };

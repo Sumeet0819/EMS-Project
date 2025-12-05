@@ -3,9 +3,12 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   asyncLoadEmployeeTasks,
   asyncCreateEmployeeTask,
+  asyncUpdateEmployeeTask,
+  asyncDeleteEmployeeTask,
 } from "../store/actions/employeeTaskActions";
 import { asyncLoadEmployees } from "../store/actions/employeeActions";
 import CreateTask from "./CreateTask";
+import Loader from "../components/Loader";
 import "../components/TaskPage.css";
 import { RiDeleteBinLine, RiPencilLine } from "@remixicon/react";
 import { toast } from "sonner";
@@ -17,6 +20,15 @@ const TaskPage = () => {
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editForm, setEditForm] = useState({
+    title: "",
+    description: "",
+    assignedTo: "",
+    priority: "medium",
+    status: "pending",
+    deadline: "",
+  });
 
   // Load tasks and employees on mount
   useEffect(() => {
@@ -39,6 +51,102 @@ const TaskPage = () => {
     if (!text) return "";
     return text.length > limit ? text.slice(0, limit) + "..." : text;
   };
+
+  const handleEditClick = (task, e) => {
+    e.stopPropagation();
+    setSelectedTask(task);
+    setIsEditMode(true);
+    // Format deadline for input (YYYY-MM-DD)
+    const deadlineDate = task.deadline
+      ? new Date(task.deadline).toISOString().split("T")[0]
+      : "";
+    setEditForm({
+      title: task.title || "",
+      description: task.description || "",
+      assignedTo: task.assignedTo?._id || task.assignedTo || "",
+      priority: task.priority || "medium",
+      status: task.status || "pending",
+      deadline: deadlineDate,
+    });
+  };
+
+  const handleDeleteClick = (task, e) => {
+    e.stopPropagation();
+    toast.custom((t) => (
+      <div className="confirm-toast">
+        <p>Are you sure you want to delete this task?</p>
+        <p style={{ fontSize: "12px", color: "var(--text-color-muted)", marginTop: "4px" }}>
+          "{task.title}"
+        </p>
+        <div className="confirm-actions">
+          <button
+            className="confirm-yes"
+            onClick={async () => {
+              toast.dismiss(t);
+              try {
+                await dispatch(asyncDeleteEmployeeTask(task._id));
+                dispatch(asyncLoadEmployeeTasks());
+                toast.success("Task deleted successfully");
+                if (selectedTask?._id === task._id) {
+                  setSelectedTask(null);
+                  setIsEditMode(false);
+                }
+              } catch (error) {
+                toast.error("Failed to delete task: " + error.message);
+              }
+            }}
+          >
+            Yes
+          </button>
+          <button className="confirm-no" onClick={() => toast.dismiss(t)}>
+            No
+          </button>
+        </div>
+      </div>
+    ));
+  };
+
+  const handleUpdateTask = async (e) => {
+    e.preventDefault();
+    try {
+      await dispatch(
+        asyncUpdateEmployeeTask(selectedTask._id, {
+          title: editForm.title,
+          description: editForm.description,
+          assignedTo: editForm.assignedTo,
+          priority: editForm.priority,
+          status: editForm.status,
+          deadline: editForm.deadline || undefined,
+        })
+      );
+      dispatch(asyncLoadEmployeeTasks());
+      toast.success("Task updated successfully");
+      setIsEditMode(false);
+      setSelectedTask(null);
+    } catch (error) {
+      toast.error("Failed to update task: " + error.message);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditMode(false);
+    setEditForm({
+      title: "",
+      description: "",
+      assignedTo: "",
+      priority: "medium",
+      status: "pending",
+      deadline: "",
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="task-page-wrapper">
+        <Loader message="Loading tasks..." size="medium" />
+      </div>
+    );
+  }
 
   return (
     <div className="task-page-wrapper">
@@ -88,10 +196,14 @@ const TaskPage = () => {
                   className="task-tools"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <span>
+                  <span onClick={(e) => handleEditClick(task, e)} title="Edit Task">
                     <RiPencilLine size={14} />
                   </span>
-                  <span className="delete">
+                  <span
+                    className="delete"
+                    onClick={(e) => handleDeleteClick(task, e)}
+                    title="Delete Task"
+                  >
                     <RiDeleteBinLine size={14} />
                   </span>
                 </div>
@@ -111,35 +223,203 @@ const TaskPage = () => {
         />
       )}
 
-      {/* Task Details Modal */}
+      {/* Task Details/Edit Modal */}
       {selectedTask && (
         <div
           className="task-modal-overlay"
-          onClick={() => setSelectedTask(null)}
+          onClick={() => {
+            if (!isEditMode) {
+              setSelectedTask(null);
+            }
+          }}
         >
           <div className="task-modal" onClick={(e) => e.stopPropagation()}>
-            <h2>{selectedTask.title}</h2>
-            {selectedTask.description.length >
-              0 &&(<p className="task-modal-desc">{selectedTask.description}</p>)}
-            <div className="task-modal-meta">
-              <p>
-                <strong>Status:</strong> {selectedTask.status}
-              </p>
-              <p>
-                <strong>Priority:</strong> {selectedTask.priority}
-              </p>
+            {isEditMode ? (
+              <>
+                <div className="modal-header">
+                  <h2>Edit Task</h2>
+                  <button
+                    className="close-btn"
+                    type="button"
+                    onClick={handleCancelEdit}
+                  >
+                    ×
+                  </button>
+                </div>
+                <p className="sub-text">Update the task details below.</p>
+                <form className="task-form" onSubmit={handleUpdateTask}>
+                  <div className="form-group full">
+                    <label>Task Title</label>
+                    <input
+                      type="text"
+                      name="title"
+                      required
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, title: e.target.value })
+                      }
+                      value={editForm.title}
+                      placeholder="Enter task title"
+                    />
+                  </div>
 
-              {selectedTask.deadline && (
-                <p>
-                  <strong>Deadline:</strong>{" "}
-                  {new Date(selectedTask.deadline).toLocaleDateString()}
-                </p>
-              )}
-            </div>
+                  <div className="form-group full">
+                    <label>Description</label>
+                    <textarea
+                      name="description"
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, description: e.target.value })
+                      }
+                      value={editForm.description}
+                      placeholder="Enter task description"
+                    ></textarea>
+                  </div>
 
-            <button className="close-btn" onClick={() => setSelectedTask(null)}>
-              Close
-            </button>
+                  <div className="form-group">
+                    <label>Assign To</label>
+                    <select
+                      name="assignedTo"
+                      required
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, assignedTo: e.target.value })
+                      }
+                      value={editForm.assignedTo}
+                    >
+                      <option value="">Select employee</option>
+                      {employees.map((emp) => (
+                        <option
+                          key={emp._id || emp.id}
+                          value={emp._id || emp.id}
+                        >
+                          {emp.fullName?.firstName || emp.firstName}{" "}
+                          {emp.fullName?.lastName || emp.lastName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Priority</label>
+                    <select
+                      name="priority"
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, priority: e.target.value })
+                      }
+                      value={editForm.priority}
+                    >
+                      <option value="low">Low</option>
+                      <option value="medium">Medium</option>
+                      <option value="high">High</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Status</label>
+                    <select
+                      name="status"
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, status: e.target.value })
+                      }
+                      value={editForm.status}
+                    >
+                      <option value="pending">Pending</option>
+                      <option value="in-progress">In Progress</option>
+                      <option value="completed">Completed</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Deadline</label>
+                    <input
+                      type="date"
+                      name="deadline"
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, deadline: e.target.value })
+                      }
+                      value={editForm.deadline}
+                    />
+                  </div>
+
+                  <div className="task-btn-row full">
+                    <button
+                      type="button"
+                      className="cancel-btn"
+                      onClick={handleCancelEdit}
+                    >
+                      Cancel
+                    </button>
+                    <button type="submit" className="primary-btn">
+                      Update Task
+                    </button>
+                  </div>
+                </form>
+              </>
+            ) : (
+              <>
+                <div className="modal-header">
+                  <h2>{selectedTask.title}</h2>
+                  <button
+                    className="close-btn"
+                    type="button"
+                    onClick={() => {
+                      setSelectedTask(null);
+                      setIsEditMode(false);
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+                {selectedTask.description &&
+                  selectedTask.description.length > 0 && (
+                    <p className="task-modal-desc">
+                      {selectedTask.description}
+                    </p>
+                  )}
+                <div className="task-modal-meta">
+                  <p>
+                    <strong>Status:</strong>{" "}
+                    <span className={`status ${selectedTask.status}`}>
+                      {selectedTask.status.replace("-", " ")}
+                    </span>
+                  </p>
+                  <p>
+                    <strong>Priority:</strong>{" "}
+                    <span className={`priority ${selectedTask.priority}`}>
+                      {selectedTask.priority}
+                    </span>
+                  </p>
+                  {selectedTask.assignedTo && (
+                    <p>
+                      <strong>Assigned To:</strong>{" "}
+                      {selectedTask.assignedTo?.fullName?.firstName ||
+                        selectedTask.assignedTo?.firstName}{" "}
+                      {selectedTask.assignedTo?.fullName?.lastName ||
+                        selectedTask.assignedTo?.lastName}
+                    </p>
+                  )}
+                  {selectedTask.deadline && (
+                    <p>
+                      <strong>Deadline:</strong>{" "}
+                      {new Date(selectedTask.deadline).toLocaleDateString()}
+                    </p>
+                  )}
+                </div>
+
+                <div className="task-modal-actions">
+                  <button
+                    className="edit-btn-modal"
+                    onClick={() => handleEditClick(selectedTask, { stopPropagation: () => {} })}
+                  >
+                    <RiPencilLine size={16} /> Edit Task
+                  </button>
+                  <button
+                    className="delete-btn-modal"
+                    onClick={() => handleDeleteClick(selectedTask, { stopPropagation: () => {} })}
+                  >
+                    <RiDeleteBinLine size={16} /> Delete Task
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

@@ -57,11 +57,18 @@ const Auth = () => {
   };
 
   return (
-    <div className="auth-wrapper">
-      <div className="auth-left-container">
-        <img src="https://images.unsplash.com/photo-1635776062360-af423602aff3?q=80&w=1332&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="" />
-      </div>
-      <div className="auth-right-container">
+    <>
+      {loading && (
+        <div className="auth-loader-overlay">
+          <div className="loader-spinner"></div>
+          <p className="loader-text">Logging you in...</p>
+        </div>
+      )}
+      <div className="auth-wrapper">
+        <div className="auth-left-container">
+          <img src="https://images.unsplash.com/photo-1635776062360-af423602aff3?q=80&w=1332&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="" />
+        </div>
+        <div className="auth-right-container">
         <div className="auth-header">
           <div className="toggle">
             <span
@@ -78,8 +85,8 @@ const Auth = () => {
               className={isEmployee ? "active" : ""}
               onClick={() => {
                 setIsEmployee(true);
-                setError("");
-              }}
+                  setError("");
+                }}
             >
               Employee
             </span>
@@ -91,85 +98,100 @@ const Auth = () => {
               <form className="auth-form" onSubmit={handleAdminSubmit}>
                 <h2>Admin Login</h2>
 
-                {error && (
+                    {error && (
                   <div className="alert alert-error">
                     <span className="alert-icon">×</span>
                     <span className="alert-message">{error}</span>
                   </div>
-                )}
+                    )}
 
                 <div className="input-container">
                   <label>Email</label>
                   <input
-                    type="email"
-                    name="email"
-                    placeholder="Enter your email"
-                    value={adminForm.email}
-                    onChange={handleAdminChange}
-                    required
-                  />
+                          type="email"
+                          name="email"
+                          placeholder="Enter your email"
+                          value={adminForm.email}
+                          onChange={handleAdminChange}
+                          required
+                        />
                 </div>
 
                 <div className="input-container">
                   <label>Password</label>
                   <input
-                    type="password"
-                    name="password"
-                    placeholder="Enter your password"
-                    value={adminForm.password}
-                    onChange={handleAdminChange}
-                    required
-                  />
+                          type="password"
+                          name="password"
+                          placeholder="Enter your password"
+                          value={adminForm.password}
+                          onChange={handleAdminChange}
+                          required
+                        />
                 </div>
 
                 <button className="button-ui" type="submit" disabled={loading}>
-                  {loading ? "Logging in..." : "Login"}
+                  {loading ? (
+                    <span className="button-loader">
+                      <span className="spinner"></span>
+                      Logging in...
+                    </span>
+                  ) : (
+                    "Login"
+                  )}
                 </button>
-              </form>
+                    </form>
             ) : (
               <form className="auth-form" onSubmit={handleEmployeeSubmit}>
                 <h2>Employee Login</h2>
 
-                {error && (
+                    {error && (
                   <div className="alert alert-error">
                     <span className="alert-icon">×</span>
                     <span className="alert-message">{error}</span>
                   </div>
-                )}
+                    )}
 
                 <div className="input-container">
                   <label>Email</label>
                   <input
-                    type="email"
-                    name="email"
-                    placeholder="Enter your email"
-                    value={employeeForm.email}
-                    onChange={handleEmployeeChange}
-                    required
-                  />
+                          type="email"
+                          name="email"
+                          placeholder="Enter your email"
+                          value={employeeForm.email}
+                          onChange={handleEmployeeChange}
+                          required
+                        />
                 </div>
 
                 <div className="input-container">
                   <label>Password</label>
                   <input
-                    type="password"
-                    name="password"
-                    placeholder="Enter your password"
-                    value={employeeForm.password}
-                    onChange={handleEmployeeChange}
-                    required
-                  />
+                          type="password"
+                          name="password"
+                          placeholder="Enter your password"
+                          value={employeeForm.password}
+                          onChange={handleEmployeeChange}
+                          required
+                        />
                 </div>
 
                 <button className="button-ui" type="submit" disabled={loading}>
-                  {loading ? "Logging in..." : "Login"}
+                  {loading ? (
+                    <span className="button-loader">
+                      <span className="spinner"></span>
+                      Logging in...
+                    </span>
+                  ) : (
+                    "Login"
+                  )}
                 </button>
-              </form>
+                    </form>
             )}
           </div>
         </div>
       </div>
     </div>
+    </>
   );
 };
 

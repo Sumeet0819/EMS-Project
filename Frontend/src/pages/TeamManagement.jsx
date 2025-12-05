@@ -10,6 +10,7 @@ import {
 } from "../store/actions/employeeActions";
 import CreateEmployee from "../components/CreateEmployee";
 import EmployeeCard from "../components/EmployeeCard";
+import Loader from "../components/Loader";
 import "../components/styles/TeamManagement.css";
 import "../components/styles/EmployeeCard.css";
 import {toast ,Toaster } from "sonner"
@@ -89,7 +90,15 @@ const handleDeleteEmployee = (id) => {
       toast.success("Employee Details Updated Successfully")
   };
 
-  if (loading) return <div className="team-layout"><p>Loading employees...</p></div>;
+  if (loading) {
+    return (
+      <div className="team-layout">
+        <div className="team-container">
+          <Loader message="Loading employees..." size="medium" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="team-layout">
@@ -108,7 +117,9 @@ const handleDeleteEmployee = (id) => {
         </div>
 
         <div className="team-table-card">
-          <h2>All Employees</h2>
+          <h2 data-count={employees.length > 0 ? `${employees.length} ${employees.length === 1 ? 'Employee' : 'Employees'}` : ''}>
+            All Employees
+          </h2>
           <div className="employee-grid">
             {employees.length > 0 ? (
               employees.map((emp) => (
@@ -120,7 +131,15 @@ const handleDeleteEmployee = (id) => {
                 />
               ))
             ) : (
-              <p>No employees found</p>
+              <div className="empty-state">
+                <div className="empty-state-icon">👥</div>
+                <h3>No Employees Yet</h3>
+                <p>Get started by adding your first employee to the team.</p>
+                <button className="empty-state-btn" onClick={handleCreateEmployee}>
+                  <RiAddLine size={16} />
+                  Add First Employee
+                </button>
+              </div>
             )}
           </div>
         </div>
