@@ -2,7 +2,7 @@ import React from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import "../components/styles/sidebar.css";
-import { RiDashboardLine, RiGroupLine, RiLogoutBoxLine } from "@remixicon/react";
+import { RiDashboardLine, RiGroupLine, RiLogoutBoxLine, RiTaskLine } from "@remixicon/react";
 import { asyncLogoutuser } from "../store/actions/userActions";
 
 const Sidebar = ({ onChangePage, active }) => {
@@ -36,7 +36,7 @@ const Sidebar = ({ onChangePage, active }) => {
           className={active === "task" ? "active" : ""}
           onClick={() => onChangePage("task")}
         >
-          <RiGroupLine size={16}/>Task Management
+          <RiTaskLine size={16}/>Task Management
         </button>
       </nav>
 

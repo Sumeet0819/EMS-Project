@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import axios from "../../utils/axiosconfig";
-import { loaduser } from "../reducers/userSlice";
+import { loaduser, clearUser } from "../reducers/userSlice";
 
 
 export const asyncRegisterUser = (employee) => async (dispatch, getState) => {
@@ -18,16 +18,23 @@ export const asyncRegisterUser = (employee) => async (dispatch, getState) => {
 export const asyncCurrentuser = () => async (dispatch, getstate) => {
   try {
     const employee = localStorage.getItem("employee");
-    if (employee) dispatch(loaduser(JSON.parse(employee)));
-    else console.log("employee not found");
+    if (employee && employee !== "" && employee !== "null") {
+      dispatch(loaduser(JSON.parse(employee)));
+    } else {
+      console.log("employee not found");
+      dispatch(clearUser());
+    }
   } catch (error) {
     console.log(error);
+    dispatch(clearUser());
   }
 };
 
 export const asyncLogoutuser = () => async (dispatch, getstate) => {
   try {
-    localStorage.setItem("employee", "");
+    localStorage.removeItem("employee");
+    localStorage.removeItem("adminActivePage"); // Clear saved page on logout
+    dispatch(clearUser());
   } catch (error) {
     console.log(error);
   }

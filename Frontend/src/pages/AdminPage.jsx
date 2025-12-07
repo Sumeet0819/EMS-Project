@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Header from "../components/Header";
 import Dashboard from "./Dashboard";
 import TeamManagement from "./TeamManagement";
@@ -7,8 +7,26 @@ import TaskPage from "./TaskPage";
 import Sidebar from "../components/Sidebar";
 
 const AdminPage = () => {
-  const [activePage, setActivePage] = useState("dashboard");
+  // Load activePage from localStorage or default to "dashboard"
+  const getInitialPage = () => {
+    try {
+      const savedPage = localStorage.getItem("adminActivePage");
+      if (savedPage && ["dashboard", "team", "task"].includes(savedPage)) {
+        return savedPage;
+      }
+    } catch (error) {
+      console.error("Error loading active page from localStorage:", error);
+    }
+    return "dashboard";
+  };
+
+  const [activePage, setActivePage] = useState(getInitialPage);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Save activePage to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem("adminActivePage", activePage);
+  }, [activePage]);
 
   const renderPage = () => {
     switch (activePage) {

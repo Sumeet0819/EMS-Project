@@ -6,11 +6,13 @@ import {
   asyncSubmitTask,
   updateTaskTimerLocal,
 } from "../store/actions/employeeTaskActions";
+import { deleteTask, updateTask } from "../store/reducers/employeeTaskSlice";
 import { asyncLogoutuser } from "../store/actions/userActions";
 import { useNavigate } from "react-router-dom";
 import Loader from "../components/Loader";
 import { RiTimeLine, RiTaskLine, RiLogoutBoxLine, RiUserLine, RiMenuLine, RiCloseLine } from "@remixicon/react";
 import { toast } from "sonner";
+import { useSocket } from "../contexts/SocketContext";
 import "../components/EmployeeDashboard.css";
 
 const EmployeeDashboard = () => {
@@ -20,6 +22,7 @@ const EmployeeDashboard = () => {
   const { user } = useSelector((state) => state.userReducer);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const socket = useSocket();
 
   // Load tasks assigned to the current employee on mount
   useEffect(() => {
@@ -27,6 +30,79 @@ const EmployeeDashboard = () => {
       dispatch(asyncLoadTasksByEmployee(user.id));
     }
   }, [dispatch, user]);
+
+  // Listen for task assignment notifications via socket.io
+  useEffect(() => {
+    if (!socket || !user?.id) return;
+
+    const handleTaskAssigned = (data) => {
+      const { task, message } = data;
+      
+      // Check if the task is assigned to the current user
+      const assignedToId = task?.assignedTo?._id || task?.assignedTo;
+      if (assignedToId && assignedToId.toString() === user.id.toString()) {
+        // Show notification using sonner
+        toast.success(message || "New task assigned!", {
+          description: task.title || "You have been assigned a new task",
+          duration: 5000,
+          action: {
+            label: "View",
+            onClick: () => {
+              // Reload tasks to show the new task
+              dispatch(asyncLoadTasksByEmployee(user.id));
+            }
+          }
+        });
+
+        // Reload tasks to include the newly assigned task
+        dispatch(asyncLoadTasksByEmployee(user.id));
+      }
+    };
+
+    const handleTaskDeleted = (data) => {
+      const { taskId, taskTitle, message } = data;
+      
+      // Show notification using sonner
+      toast.info(message || "Task deleted", {
+        description: taskTitle || "A task assigned to you has been deleted",
+        duration: 4000,
+      });
+
+      // Remove the task from the list using the deleteTask action
+      dispatch(deleteTask(taskId));
+    };
+
+    const handleTaskUpdated = (data) => {
+      const { task, message } = data;
+      
+      // Check if the task is assigned to the current user
+      const assignedToId = task?.assignedTo?._id || task?.assignedTo;
+      if (assignedToId && assignedToId.toString() === user.id.toString()) {
+        // Show notification using sonner
+        toast.success(message || "Task updated!", {
+          description: task.title || "A task assigned to you has been updated",
+          duration: 4000,
+        });
+
+        // Update the task in the list using the updateTask action
+        dispatch(updateTask(task));
+      }
+    };
+
+    // Listen for task assignment events
+    socket.on('taskAssigned', handleTaskAssigned);
+    // Listen for task deletion events
+    socket.on('taskDeleted', handleTaskDeleted);
+    // Listen for task update events
+    socket.on('taskUpdated', handleTaskUpdated);
+
+    // Cleanup listeners on unmount
+    return () => {
+      socket.off('taskAssigned', handleTaskAssigned);
+      socket.off('taskDeleted', handleTaskDeleted);
+      socket.off('taskUpdated', handleTaskUpdated);
+    };
+  }, [socket, user, dispatch]);
 
   // Update clock every second
   useEffect(() => {
@@ -142,12 +218,6 @@ const EmployeeDashboard = () => {
     ? `${user.fullName.firstName} ${user.fullName.lastName}`
     : user?.email || "Employee";
 
-  if (loading)
-    return (
-      <div className="emp-main-wrapper">
-        <Loader message="Loading tasks..." size="medium" />
-      </div>
-    );
 
   return (
     <div className="emp-main-wrapper">

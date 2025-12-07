@@ -10,7 +10,6 @@ import {
 } from "../store/actions/employeeActions";
 import CreateEmployee from "../components/CreateEmployee";
 import EmployeeCard from "../components/EmployeeCard";
-import Loader from "../components/Loader";
 import "../components/styles/TeamManagement.css";
 import "../components/styles/EmployeeCard.css";
 import {toast ,Toaster } from "sonner"
@@ -90,15 +89,6 @@ const handleDeleteEmployee = (id) => {
       toast.success("Employee Details Updated Successfully")
   };
 
-  if (loading) {
-    return (
-      <div className="team-layout">
-        <div className="team-container">
-          <Loader message="Loading employees..." size="medium" />
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="team-layout">
@@ -110,7 +100,7 @@ const handleDeleteEmployee = (id) => {
           </div>
           <button className="add-employee-btn" onClick={handleCreateEmployee}>
             <span className="icon-btn">
-              <RiAddLine />
+              <RiAddLine size={16} />
             </span>
             Add Employee
           </button>

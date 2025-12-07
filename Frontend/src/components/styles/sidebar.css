@@ -31,7 +31,7 @@
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-md);
   width: 100%;
   padding: 12px 16px;
   border-radius: var(--border-radius-sm);
@@ -53,7 +53,6 @@
   background: rgba(0, 123, 255, 0.15);
   color: var(--primary-color);
   box-shadow: none;
-  border-left: 3px solid var(--primary-color);
 }
 
 /* Sidebar Footer - Logout Button */

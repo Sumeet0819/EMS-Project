@@ -3,7 +3,7 @@ import { store } from "../store/store";
 import { asyncLogoutuser } from "../store/actions/userActions";
 
 const instance = axios.create({
-  baseURL: "https://ems-project-nu3f.onrender.com/api",
+  baseURL: "http://localhost:3000/api",
   withCredentials: true,
 });
 

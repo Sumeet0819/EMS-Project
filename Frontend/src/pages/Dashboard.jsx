@@ -8,9 +8,12 @@ import Loader from "../components/Loader";
 import { RiCheckLine, RiTaskLine, RiTimeLine, RiUserLine } from "@remixicon/react";
 import { asyncLoadEmployees } from "../store/actions/employeeActions";
 import { asyncLoadEmployeeTasks } from "../store/actions/employeeTaskActions";
+import { updateTask, deleteTask, createTask } from "../store/reducers/employeeTaskSlice";
+import { useSocket } from "../contexts/SocketContext";
 
 const Dashboard = () => {
   const dispatch = useDispatch();
+  const socket = useSocket();
   const { employees, loading: employeesLoading } = useSelector((state) => state.employeeReducer);
   const { tasks, loading: tasksLoading } = useSelector((state) => state.employeeTaskReducer);
 
@@ -19,6 +22,49 @@ const Dashboard = () => {
     dispatch(asyncLoadEmployees());
     dispatch(asyncLoadEmployeeTasks());
   }, [dispatch]);
+
+  // Listen for real-time task updates via socket.io
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleTaskUpdatedBroadcast = (data) => {
+      const { task } = data;
+      // Update the task in the Redux store
+      dispatch(updateTask(task));
+    };
+
+    const handleTaskStatusChanged = (data) => {
+      const { task } = data;
+      // Update the task in the Redux store
+      dispatch(updateTask(task));
+    };
+
+    const handleTaskDeleted = (data) => {
+      const { taskId } = data;
+      // Remove the task from the Redux store
+      dispatch(deleteTask(taskId));
+    };
+
+    const handleTaskAssigned = (data) => {
+      const { task } = data;
+      // Add the new task to the Redux store
+      dispatch(createTask(task));
+    };
+
+    // Listen for task update events
+    socket.on('taskUpdatedBroadcast', handleTaskUpdatedBroadcast);
+    socket.on('taskStatusChanged', handleTaskStatusChanged);
+    socket.on('taskDeleted', handleTaskDeleted);
+    socket.on('taskAssigned', handleTaskAssigned);
+
+    // Cleanup listeners on unmount
+    return () => {
+      socket.off('taskUpdatedBroadcast', handleTaskUpdatedBroadcast);
+      socket.off('taskStatusChanged', handleTaskStatusChanged);
+      socket.off('taskDeleted', handleTaskDeleted);
+      socket.off('taskAssigned', handleTaskAssigned);
+    };
+  }, [socket, dispatch]);
 
   // Calculate statistics
   const stats = useMemo(() => {
@@ -116,10 +162,6 @@ const Dashboard = () => {
       <h1>Dashboard Overview</h1>
       <p className="subtitle">Welcome back! Here's what's happening today.</p>
 
-      {loading ? (
-        <Loader message="Loading dashboard data..." size="medium" />
-      ) : (
-        <>
           <div className="stats-grid">
             <StatCard 
               label="Total Employees" 
@@ -151,8 +193,6 @@ const Dashboard = () => {
               pending={taskDistribution.pending} 
             />
           </div>
-        </>
-      )}
     </div>
   );
 };

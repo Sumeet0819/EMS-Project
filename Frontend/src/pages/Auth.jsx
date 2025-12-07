@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useDispatch } from "react-redux";
+import React, { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { asyncLoginuser } from "../store/actions/userActions";
 import "../components/styles/auth.css";
@@ -10,6 +10,18 @@ const Auth = () => {
   const [error, setError] = useState("");
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { user } = useSelector((state) => state.userReducer);
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      if (user.role === "admin") {
+        navigate("/admin", { replace: true });
+      } else if (user.role === "employee") {
+        navigate("/employee", { replace: true });
+      }
+    }
+  }, [user, navigate]);
 
   const [adminForm, setAdminForm] = useState({ email: "", password: "" });
   const [employeeForm, setEmployeeForm] = useState({ email: "", password: "" });

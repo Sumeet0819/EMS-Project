@@ -7,14 +7,16 @@ import {
   asyncDeleteEmployeeTask,
 } from "../store/actions/employeeTaskActions";
 import { asyncLoadEmployees } from "../store/actions/employeeActions";
+import { updateTask, deleteTask } from "../store/reducers/employeeTaskSlice";
+import { useSocket } from "../contexts/SocketContext";
 import CreateTask from "./CreateTask";
-import Loader from "../components/Loader";
 import "../components/TaskPage.css";
 import { RiDeleteBinLine, RiPencilLine } from "@remixicon/react";
 import { toast } from "sonner";
 
 const TaskPage = () => {
   const dispatch = useDispatch();
+  const socket = useSocket();
   const { tasks, loading } = useSelector((state) => state.employeeTaskReducer);
   const { employees } = useSelector((state) => state.employeeReducer);
 
@@ -35,6 +37,76 @@ const TaskPage = () => {
     dispatch(asyncLoadEmployeeTasks());
     dispatch(asyncLoadEmployees());
   }, [dispatch]);
+
+  // Listen for real-time task updates via socket.io
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleTaskUpdated = (data) => {
+      const { task } = data;
+      // Update the task in the Redux store
+      dispatch(updateTask(task));
+      
+      // Only update selected task if we're NOT in edit mode (to prevent modal from reopening)
+      if (selectedTask && selectedTask._id === task._id && !isEditMode) {
+        setSelectedTask(task);
+      }
+    };
+
+    const handleTaskDeleted = (data) => {
+      const { taskId } = data;
+      // Remove the task from the Redux store
+      dispatch(deleteTask(taskId));
+      
+      // Clear selected task if it was deleted
+      if (selectedTask && selectedTask._id === taskId) {
+        setSelectedTask(null);
+        setIsEditMode(false);
+      }
+    };
+
+    const handleTaskStatusChanged = (data) => {
+      const { task, message } = data;
+      // Update the task in the Redux store
+      dispatch(updateTask(task));
+      
+      // Show notification
+      toast.info(message || "Task status changed", {
+        description: task.title,
+        duration: 4000,
+      });
+      
+      // Only update selected task if we're NOT in edit mode (to prevent modal from reopening)
+      if (selectedTask && selectedTask._id === task._id && !isEditMode) {
+        setSelectedTask(task);
+      }
+    };
+
+    const handleTaskUpdatedBroadcast = (data) => {
+      const { task } = data;
+      // Update the task in the Redux store
+      dispatch(updateTask(task));
+      
+      // Only update selected task if we're NOT in edit mode (to prevent modal from reopening)
+      if (selectedTask && selectedTask._id === task._id && !isEditMode) {
+        setSelectedTask(task);
+      }
+    };
+
+    // Listen for task update events
+    socket.on('taskUpdatedBroadcast', handleTaskUpdatedBroadcast);
+    socket.on('taskStatusChanged', handleTaskStatusChanged);
+    socket.on('taskUpdated', handleTaskUpdated);
+    socket.on('taskDeleted', handleTaskDeleted);
+
+    // Cleanup listeners on unmount
+    return () => {
+      socket.off('taskUpdatedBroadcast', handleTaskUpdatedBroadcast);
+      socket.off('taskStatusChanged', handleTaskStatusChanged);
+      socket.off('taskUpdated', handleTaskUpdated);
+      socket.off('taskDeleted', handleTaskDeleted);
+    };
+  }, [socket, dispatch, selectedTask, isEditMode]);
 
   const handleCreateTask = async (newTask) => {
     try {
@@ -109,8 +181,9 @@ const TaskPage = () => {
   const handleUpdateTask = async (e) => {
     e.preventDefault();
     try {
+      const taskId = selectedTask._id;
       await dispatch(
-        asyncUpdateEmployeeTask(selectedTask._id, {
+        asyncUpdateEmployeeTask(taskId, {
           title: editForm.title,
           description: editForm.description,
           assignedTo: editForm.assignedTo,
@@ -121,8 +194,18 @@ const TaskPage = () => {
       );
       dispatch(asyncLoadEmployeeTasks());
       toast.success("Task updated successfully");
+      // Close modal and clear edit mode
       setIsEditMode(false);
       setSelectedTask(null);
+      // Clear edit form
+      setEditForm({
+        title: "",
+        description: "",
+        assignedTo: "",
+        priority: "medium",
+        status: "pending",
+        deadline: "",
+      });
     } catch (error) {
       toast.error("Failed to update task: " + error.message);
     }
@@ -130,6 +213,7 @@ const TaskPage = () => {
 
   const handleCancelEdit = () => {
     setIsEditMode(false);
+    setSelectedTask(null);
     setEditForm({
       title: "",
       description: "",
@@ -139,14 +223,6 @@ const TaskPage = () => {
       deadline: "",
     });
   };
-
-  if (loading) {
-    return (
-      <div className="task-page-wrapper">
-        <Loader message="Loading tasks..." size="medium" />
-      </div>
-    );
-  }
 
   return (
     <div className="task-page-wrapper">
