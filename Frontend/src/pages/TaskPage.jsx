@@ -23,13 +23,13 @@ const TaskPage = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [employeeFilter, setEmployeeFilter] = useState("");
   const [editForm, setEditForm] = useState({
     title: "",
     description: "",
     assignedTo: "",
     priority: "medium",
     status: "pending",
-    deadline: "",
   });
 
   // Load tasks and employees on mount
@@ -128,17 +128,12 @@ const TaskPage = () => {
     e.stopPropagation();
     setSelectedTask(task);
     setIsEditMode(true);
-    // Format deadline for input (YYYY-MM-DD)
-    const deadlineDate = task.deadline
-      ? new Date(task.deadline).toISOString().split("T")[0]
-      : "";
     setEditForm({
       title: task.title || "",
       description: task.description || "",
       assignedTo: task.assignedTo?._id || task.assignedTo || "",
       priority: task.priority || "medium",
       status: task.status || "pending",
-      deadline: deadlineDate,
     });
   };
 
@@ -189,7 +184,6 @@ const TaskPage = () => {
           assignedTo: editForm.assignedTo,
           priority: editForm.priority,
           status: editForm.status,
-          deadline: editForm.deadline || undefined,
         })
       );
       dispatch(asyncLoadEmployeeTasks());
@@ -204,7 +198,6 @@ const TaskPage = () => {
         assignedTo: "",
         priority: "medium",
         status: "pending",
-        deadline: "",
       });
     } catch (error) {
       toast.error("Failed to update task: " + error.message);
@@ -232,60 +225,98 @@ const TaskPage = () => {
           <p className="task-subtitle">Manage all tasks and assign work</p>
         </div>
 
+        <div style={{ display: "flex", gap: "var(--spacing-md)", alignItems: "center" }}>
+          <select
+            className="employee-filter-select"
+            value={employeeFilter}
+            onChange={(e) => setEmployeeFilter(e.target.value)}
+            style={{
+              padding: "12px 16px",
+              borderRadius: "var(--border-radius-sm)",
+              border: "1px solid var(--border-light)",
+              background: "var(--surface-color)",
+              fontSize: "var(--font-size-sm)",
+              cursor: "pointer",
+              minWidth: "200px",
+            }}
+          >
+            <option value="">All Employees</option>
+            {employees.map((emp) => (
+              <option key={emp._id || emp.id} value={emp._id || emp.id}>
+                {emp.fullName?.firstName || emp.firstName} {emp.fullName?.lastName || emp.lastName}
+              </option>
+            ))}
+          </select>
         <button
           className="add-task-btn"
           onClick={() => setShowCreateModal(true)}
         >
           + Create Task
         </button>
+        </div>
       </div>
 
-      <div className="tasks-grid">
+      <div className="tasks-table-container">
         {Array.isArray(tasks) && tasks.length > 0 ? (
-          tasks.map((task) => (
-            <div
-              key={task._id}
-              className="task-card"
-              onClick={() => setSelectedTask(task)}
-            >
-              <div className="task-header">
-                <h4>{task.title}</h4>
-                <span className={`status ${task.status}`}>
-                  {task.status.replace("-", " ")}
-                </span>
-              </div>
-
-              <p className="task-desc">{truncateText(task.description, 200)}</p>
-
-              <div className="task-meta">
+          <table className="tasks-table">
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Description</th>
+                <th>Assigned To</th>
+                <th>Priority</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {tasks
+                .filter((task) => {
+                  if (!employeeFilter) return true;
+                  const assignedToId = task.assignedTo?._id || task.assignedTo;
+                  return assignedToId?.toString() === employeeFilter;
+                })
+                .map((task) => (
+                <tr key={task._id} onClick={() => setSelectedTask(task)}>
+                  <td className="task-title-cell">
+                    <strong>{task.title}</strong>
+                  </td>
+                  <td className="task-desc-cell">
+                    {truncateText(task.description, 100)}
+                  </td>
+                  <td className="task-assigned-cell">
+                    {task.assignedTo?.fullName
+                      ? `${task.assignedTo.fullName.firstName} ${task.assignedTo.fullName.lastName}`
+                      : task.assignedTo?.email || "Unassigned"}
+                  </td>
+                  <td>
                 <span className={`priority ${task.priority}`}>
                   {task.priority}
                 </span>
-
-                {task.deadline && (
-                  <span className="deadline">
-                    {new Date(task.deadline).toLocaleDateString()}
+                  </td>
+                  <td>
+                    <span className={`status ${task.status}`}>
+                      {task.status.replace("-", " ")}
                   </span>
-                )}
-
-                <div
-                  className="task-tools"
-                  onClick={(e) => e.stopPropagation()}
-                >
+                  </td>
+                  <td className="task-actions-cell" onClick={(e) => e.stopPropagation()}>
+                    <div className="task-tools">
                   <span onClick={(e) => handleEditClick(task, e)} title="Edit Task">
-                    <RiPencilLine size={14} />
+                        <RiPencilLine size={16} />
                   </span>
                   <span
                     className="delete"
                     onClick={(e) => handleDeleteClick(task, e)}
                     title="Delete Task"
                   >
-                    <RiDeleteBinLine size={14} />
+                        <RiDeleteBinLine size={16} />
                   </span>
                 </div>
-              </div>
-            </div>
-          ))
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         ) : (
           <p className="no-data">No tasks found</p>
         )}
@@ -294,6 +325,7 @@ const TaskPage = () => {
       {showCreateModal && (
         <CreateTask
           employees={employees}
+          preSelectedEmployee={employeeFilter}
           onCancel={() => setShowCreateModal(false)}
           onSubmit={handleCreateTask}
         />
@@ -403,18 +435,6 @@ const TaskPage = () => {
                     </select>
                   </div>
 
-                  <div className="form-group">
-                    <label>Deadline</label>
-                    <input
-                      type="date"
-                      name="deadline"
-                      onChange={(e) =>
-                        setEditForm({ ...editForm, deadline: e.target.value })
-                      }
-                      value={editForm.deadline}
-                    />
-                  </div>
-
                   <div className="task-btn-row full">
                     <button
                       type="button"
@@ -470,12 +490,6 @@ const TaskPage = () => {
                         selectedTask.assignedTo?.firstName}{" "}
                       {selectedTask.assignedTo?.fullName?.lastName ||
                         selectedTask.assignedTo?.lastName}
-                    </p>
-                  )}
-                  {selectedTask.deadline && (
-                    <p>
-                      <strong>Deadline:</strong>{" "}
-                      {new Date(selectedTask.deadline).toLocaleDateString()}
                     </p>
                   )}
                 </div>

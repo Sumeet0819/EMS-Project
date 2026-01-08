@@ -43,6 +43,14 @@ const taskSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    remark: {
+      type: String,
+      default: "",
+    },
+    isDaily: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,

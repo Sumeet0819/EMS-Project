@@ -3,16 +3,16 @@ import { useDispatch, useSelector } from "react-redux";
 import { asyncLoadEmployees } from "../store/actions/employeeActions";
 import "../components/CreateTask.css";
 
-const CreateTask = ({ onCancel, onSubmit, employees: passedEmployees }) => {
+const CreateTask = ({ onCancel, onSubmit, employees: passedEmployees, preSelectedEmployee }) => {
   const dispatch = useDispatch();
   const { employees: reduxEmployees, loading } = useSelector((state) => state.employeeReducer);
   const [form, setForm] = useState({
     title: "",
     description: "",
-    assignedTo: "",
+    assignedTo: preSelectedEmployee || "",
     priority: "medium",
     status: "pending",
-    deadline: ""
+    isDaily: false,
   });
 
   // Load employees on mount if not passed as prop
@@ -21,6 +21,13 @@ const CreateTask = ({ onCancel, onSubmit, employees: passedEmployees }) => {
       dispatch(asyncLoadEmployees());
     }
   }, [dispatch, passedEmployees]);
+
+  // Update assignedTo when preSelectedEmployee changes
+  useEffect(() => {
+    if (preSelectedEmployee) {
+      setForm(prev => ({ ...prev, assignedTo: preSelectedEmployee }));
+    }
+  }, [preSelectedEmployee]);
 
   const employees = passedEmployees && passedEmployees.length > 0 ? passedEmployees : reduxEmployees;
 
@@ -42,17 +49,17 @@ const CreateTask = ({ onCancel, onSubmit, employees: passedEmployees }) => {
       assignedToName: selectedEmployee ? `${selectedEmployee.fullName?.firstName || selectedEmployee.firstName} ${selectedEmployee.fullName?.lastName || selectedEmployee.lastName}` : "",
       priority: form.priority,
       status: form.status,
-      deadline: form.deadline
+      isDaily: form.isDaily,
     });
 
     // Reset form
     setForm({
       title: "",
       description: "",
-      assignedTo: "",
+      assignedTo: preSelectedEmployee || "",
       priority: "medium",
       status: "pending",
-      deadline: ""
+      isDaily: false,
     });
   };
 
@@ -127,14 +134,17 @@ const CreateTask = ({ onCancel, onSubmit, employees: passedEmployees }) => {
             </select>
           </div>
 
-          <div className="form-group">
-            <label>Deadline</label>
-            <input
-              type="date"
-              name="deadline"
-              onChange={handleChange}
-              value={form.deadline}
-            />
+          <div className="form-group full">
+            <label style={{ display: "flex", alignItems: "center", gap: "var(--spacing-sm)", cursor: "pointer" }}>
+              <input
+                type="checkbox"
+                name="isDaily"
+                checked={form.isDaily}
+                onChange={(e) => setForm({ ...form, isDaily: e.target.checked })}
+                style={{ width: "auto", cursor: "pointer" }}
+              />
+              <span>Mark as Daily Task (recurring)</span>
+            </label>
           </div>
 
           <div className="task-btn-row full">

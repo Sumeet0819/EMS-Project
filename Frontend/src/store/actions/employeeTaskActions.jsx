@@ -92,9 +92,9 @@ export const asyncStartTask = (taskId) => async (dispatch, getState) => {
 };
 
 // Submit a task (status: completed)
-export const asyncSubmitTask = (taskId) => async (dispatch, getState) => {
+export const asyncSubmitTask = (taskId, remark = "") => async (dispatch, getState) => {
   try {
-    const updatedTask = { status: "completed" };
+    const updatedTask = { status: "completed", remark };
     const { data } = await axios.put(`/tasks/${taskId}`, updatedTask);
     dispatch(updateTask(data.data));
     dispatch(setError(null));

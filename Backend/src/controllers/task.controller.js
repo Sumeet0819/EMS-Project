@@ -88,6 +88,10 @@ exports.updateTask = async (req, res) => {
     } else if (status === "completed") {
       updateData.status = status;
       updateData.completedTime = new Date();
+      // If remark is provided, add it
+      if (req.body.remark !== undefined) {
+        updateData.remark = req.body.remark;
+      }
     } else {
       updateData.status = status;
     }

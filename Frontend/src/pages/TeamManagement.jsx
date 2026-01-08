@@ -110,16 +110,53 @@ const handleDeleteEmployee = (id) => {
           <h2 data-count={employees.length > 0 ? `${employees.length} ${employees.length === 1 ? 'Employee' : 'Employees'}` : ''}>
             All Employees
           </h2>
-          <div className="employee-grid">
+          <div className="employees-table-container">
             {employees.length > 0 ? (
-              employees.map((emp) => (
-                <EmployeeCard
-                  key={emp._id || emp.id}
-                  employee={emp}
-                  onDelete={handleDeleteEmployee}
-                  onEdit={handleEdit}
-                />
-              ))
+              <table className="employees-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {employees.map((emp) => (
+                    <tr key={emp._id || emp.id}>
+                      <td className="employee-name-cell">
+                        <strong>
+                          {emp.fullName?.firstName || emp.firstName} {emp.fullName?.lastName || emp.lastName}
+                        </strong>
+                      </td>
+                      <td className="employee-email-cell">{emp.email}</td>
+                      <td>
+                        <span className={`role-badge ${emp.role}`}>
+                          {emp.role}
+                        </span>
+                      </td>
+                      <td className="employee-actions-cell">
+                        <div className="employee-actions">
+                          <button
+                            className="edit-btn"
+                            onClick={() => handleEdit(emp)}
+                            title="Edit Employee"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            className="delete-btn"
+                            onClick={() => handleDeleteEmployee(emp._id || emp.id)}
+                            title="Delete Employee"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             ) : (
               <div className="empty-state">
                 <div className="empty-state-icon">👥</div>

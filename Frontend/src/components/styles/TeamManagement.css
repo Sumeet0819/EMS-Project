@@ -19,7 +19,7 @@
   padding-bottom: var(--spacing-lg);
 }
 
-.team-header > div:first-child {
+.team-header>div:first-child {
   flex: 1;
   text-align: left;
 }
@@ -95,6 +95,108 @@
   white-space: nowrap;
 }
 
+/* Employees Table */
+.employees-table-container {
+  width: 100%;
+  overflow-x: auto;
+  background: var(--surface-color);
+  border-radius: var(--border-radius-sm);
+  box-shadow: var(--box-shadow-sm);
+}
+
+.employees-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--surface-color);
+}
+
+.employees-table thead {
+  background: white;
+  border-bottom: 2px solid var(--border-light);
+}
+
+.employees-table th {
+  padding: var(--spacing-md);
+  text-align: left;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-color);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.employees-table tbody tr {
+  border-bottom: 1px solid var(--border-light);
+  transition: all var(--transition-base);
+}
+
+.employees-table tbody tr:hover {
+  background: var(--background-light);
+}
+
+.employees-table td {
+  padding: var(--spacing-md);
+  font-size: var(--font-size-sm);
+  color: var(--text-color);
+  vertical-align: middle;
+}
+
+.employee-name-cell {
+  font-weight: var(--font-weight-medium);
+  min-width: 200px;
+}
+
+.employee-email-cell {
+  min-width: 250px;
+  color: var(--text-color-muted);
+}
+
+.employee-actions-cell {
+  white-space: nowrap;
+  min-width: 150px;
+}
+
+.employee-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.employee-actions .edit-btn,
+.employee-actions .delete-btn {
+  padding: 8px 16px;
+  border-radius: var(--border-radius-sm);
+  border: none;
+  cursor: pointer;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  transition: all var(--transition-base);
+  box-shadow: var(--box-shadow-sm);
+}
+
+.employee-actions .edit-btn {
+  background: var(--primary-color);
+  color: white;
+}
+
+.employee-actions .edit-btn:hover {
+  background: var(--primary-hover);
+  box-shadow: var(--box-shadow-md);
+  transform: translateY(-1px);
+}
+
+.employee-actions .delete-btn {
+  background: var(--error-bg);
+  color: var(--error-color);
+  border: 1px solid var(--error-color);
+}
+
+.employee-actions .delete-btn:hover {
+  background: var(--error-color);
+  color: white;
+  box-shadow: var(--box-shadow-sm);
+}
+
 /* Role Badges */
 .role-badge {
   padding: 6px 12px;
@@ -102,14 +204,15 @@
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-medium);
   display: inline-block;
+  text-transform: capitalize;
 }
 
-.employee-role {
+.role-badge.employee {
   background: var(--background-color);
   color: var(--text-color-muted);
 }
 
-.admin-role {
+.role-badge.admin {
   background: var(--primary-color);
   color: #fff;
 }
