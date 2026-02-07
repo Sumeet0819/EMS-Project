@@ -10,7 +10,7 @@ import { deleteTask, updateTask } from "../store/reducers/employeeTaskSlice";
 import { asyncLogoutuser } from "../store/actions/userActions";
 import { useNavigate } from "react-router-dom";
 import Loader from "../components/Loader";
-import { RiTimeLine, RiTaskLine, RiLogoutBoxLine, RiUserLine, RiMenuLine, RiCloseLine, RiFilter3Line, RiMenuFoldLine, RiMenuUnfoldLine } from "@remixicon/react";
+import { RiTimeLine, RiTaskLine, RiLogoutBoxLine, RiUserLine, RiMenuLine, RiCloseLine, RiFilter3Line, RiMenuFoldLine, RiMenuUnfoldLine, RiSearchLine } from "@remixicon/react";
 import { toast } from "sonner";
 import { useSocket } from "../contexts/SocketContext";
 import "../styles/EmployeeDashboard.css";
@@ -478,10 +478,11 @@ const EmployeeDashboard = () => {
         {/* Search and Filters */}
         <div className="search-filter-bar">
           <div className="search-box">
+            <RiSearchLine className="search-icon" size={20} />
             <input
               type="text"
               className="search-input"
-              placeholder="Search tasks by title, description, or remarks..."
+              placeholder="Search tasks..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
