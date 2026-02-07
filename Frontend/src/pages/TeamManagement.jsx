@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  RiAddLine,
+  RiAddLine, RiPencilLine, RiDeleteBinLine, RiCloseLine
 } from "@remixicon/react";
 import {
   asyncLoadEmployees,
@@ -142,14 +142,14 @@ const handleDeleteEmployee = (id) => {
                             onClick={() => handleEdit(emp)}
                             title="Edit Employee"
                           >
-                            Edit
+                            <RiPencilLine size={18} />
                           </button>
                           <button
                             className="delete-btn"
                             onClick={() => handleDeleteEmployee(emp._id || emp.id)}
                             title="Delete Employee"
                           >
-                            Delete
+                            <RiDeleteBinLine size={18} />
                           </button>
                         </div>
                       </td>
@@ -176,8 +176,16 @@ const handleDeleteEmployee = (id) => {
       )}
       {isEditModalOpen && selectedEmployee && (
         <div className="modal-overlay">
-          <div className="modal">
-            <h2>Edit Employee</h2>
+          <div className="modal-box">
+            <div className="modal-header">
+              <h2>Edit Employee</h2>
+              <button
+                className="close-btn"
+                onClick={() => setEditModalOpen(false)}
+              >
+                <RiCloseLine size={24} />
+              </button>
+            </div>
             <form onSubmit={handleUpdateEmployee}>
               <div className="form-group">
                 <label>First Name</label>
@@ -213,11 +221,11 @@ const handleDeleteEmployee = (id) => {
                   <option value="admin">Admin</option>
                 </select>
               </div>
-              <div className="form-actions">
-                <button type="submit">Update</button>
-                <button type="button" onClick={() => setEditModalOpen(false)}>
+              <div className="form-actions row">
+                <button type="button" className="cancel-btn" onClick={() => setEditModalOpen(false)}>
                   Cancel
                 </button>
+                <button type="submit" className="primary-btn">Update</button>
               </div>
             </form>
           </div>

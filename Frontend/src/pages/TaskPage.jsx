@@ -11,8 +11,9 @@ import { updateTask, deleteTask } from "../store/reducers/employeeTaskSlice";
 import { useSocket } from "../contexts/SocketContext";
 import CreateTask from "./CreateTask";
 import "../styles/TaskPage.css";
-import { RiDeleteBinLine, RiPencilLine } from "@remixicon/react";
+import { RiDeleteBinLine, RiPencilLine, RiEyeLine } from "@remixicon/react";
 import { toast } from "sonner";
+import TaskDetailsModal from "../components/TaskDetailsModal";
 
 const TaskPage = () => {
   const dispatch = useDispatch();
@@ -21,6 +22,7 @@ const TaskPage = () => {
   const { employees } = useSelector((state) => state.employeeReducer);
 
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [employeeFilter, setEmployeeFilter] = useState("");
@@ -122,6 +124,11 @@ const TaskPage = () => {
   const truncateText = (text, limit = 200) => {
     if (!text) return "";
     return text.length > limit ? text.slice(0, limit) + "..." : text;
+  };
+
+  const handleViewDetails = (task) => {
+    setSelectedTask(task);
+    setShowDetailsModal(true);
   };
 
   const handleEditClick = (task, e) => {
@@ -277,7 +284,7 @@ const TaskPage = () => {
                   return assignedToId?.toString() === employeeFilter;
                 })
                 .map((task) => (
-                <tr key={task._id} onClick={() => setSelectedTask(task)}>
+                <tr key={task._id} onClick={() => handleViewDetails(task)}>
                   <td className="task-title-cell">
                     <strong>{task.title}</strong>
                   </td>
@@ -331,187 +338,131 @@ const TaskPage = () => {
         />
       )}
 
-      {/* Task Details/Edit Modal */}
-      {selectedTask && (
+      {/* Task Edit Modal */}
+      {isEditMode && selectedTask && (
         <div
           className="task-modal-overlay"
           onClick={() => {
-            if (!isEditMode) {
-              setSelectedTask(null);
-            }
+            setIsEditMode(false);
+            setSelectedTask(null);
           }}
         >
           <div className="task-modal" onClick={(e) => e.stopPropagation()}>
-            {isEditMode ? (
-              <>
-                <div className="modal-header">
-                  <h2>Edit Task</h2>
-                  <button
-                    className="close-btn"
-                    type="button"
-                    onClick={handleCancelEdit}
-                  >
-                    ×
-                  </button>
-                </div>
-                <p className="sub-text">Update the task details below.</p>
-                <form className="task-form" onSubmit={handleUpdateTask}>
-                  <div className="form-group full">
-                    <label>Task Title</label>
-                    <input
-                      type="text"
-                      name="title"
-                      required
-                      onChange={(e) =>
-                        setEditForm({ ...editForm, title: e.target.value })
-                      }
-                      value={editForm.title}
-                      placeholder="Enter task title"
-                    />
-                  </div>
+            <div className="modal-header">
+              <h2>Edit Task</h2>
+              <button
+                className="close-btn"
+                type="button"
+                onClick={handleCancelEdit}
+              >
+                ×
+              </button>
+            </div>
+            <p className="sub-text">Update the task details below.</p>
+            <form className="task-form" onSubmit={handleUpdateTask}>
+              <div className="form-group full">
+                <label>Task Title</label>
+                <input
+                  type="text"
+                  name="title"
+                  required
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, title: e.target.value })
+                  }
+                  value={editForm.title}
+                  placeholder="Enter task title"
+                />
+              </div>
 
-                  <div className="form-group full">
-                    <label>Description</label>
-                    <textarea
-                      name="description"
-                      onChange={(e) =>
-                        setEditForm({ ...editForm, description: e.target.value })
-                      }
-                      value={editForm.description}
-                      placeholder="Enter task description"
-                    ></textarea>
-                  </div>
+              <div className="form-group full">
+                <label>Description</label>
+                <textarea
+                  name="description"
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, description: e.target.value })
+                  }
+                  value={editForm.description}
+                  placeholder="Enter task description"
+                ></textarea>
+              </div>
 
-                  <div className="form-group">
-                    <label>Assign To</label>
-                    <select
-                      name="assignedTo"
-                      required
-                      onChange={(e) =>
-                        setEditForm({ ...editForm, assignedTo: e.target.value })
-                      }
-                      value={editForm.assignedTo}
+              <div className="form-group">
+                <label>Assign To</label>
+                <select
+                  name="assignedTo"
+                  required
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, assignedTo: e.target.value })
+                  }
+                  value={editForm.assignedTo}
+                >
+                  <option value="">Select employee</option>
+                  {employees.map((emp) => (
+                    <option
+                      key={emp._id || emp.id}
+                      value={emp._id || emp.id}
                     >
-                      <option value="">Select employee</option>
-                      {employees.map((emp) => (
-                        <option
-                          key={emp._id || emp.id}
-                          value={emp._id || emp.id}
-                        >
-                          {emp.fullName?.firstName || emp.firstName}{" "}
-                          {emp.fullName?.lastName || emp.lastName}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                      {emp.fullName?.firstName || emp.firstName}{" "}
+                      {emp.fullName?.lastName || emp.lastName}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-                  <div className="form-group">
-                    <label>Priority</label>
-                    <select
-                      name="priority"
-                      onChange={(e) =>
-                        setEditForm({ ...editForm, priority: e.target.value })
-                      }
-                      value={editForm.priority}
-                    >
-                      <option value="low">Low</option>
-                      <option value="medium">Medium</option>
-                      <option value="high">High</option>
-                    </select>
-                  </div>
+              <div className="form-group">
+                <label>Priority</label>
+                <select
+                  name="priority"
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, priority: e.target.value })
+                  }
+                  value={editForm.priority}
+                >
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                </select>
+              </div>
 
-                  <div className="form-group">
-                    <label>Status</label>
-                    <select
-                      name="status"
-                      onChange={(e) =>
-                        setEditForm({ ...editForm, status: e.target.value })
-                      }
-                      value={editForm.status}
-                    >
-                      <option value="pending">Pending</option>
-                      <option value="in-progress">In Progress</option>
-                      <option value="completed">Completed</option>
-                    </select>
-                  </div>
+              <div className="form-group">
+                <label>Status</label>
+                <select
+                  name="status"
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, status: e.target.value })
+                  }
+                  value={editForm.status}
+                >
+                  <option value="pending">Pending</option>
+                  <option value="in-progress">In Progress</option>
+                  <option value="completed">Completed</option>
+                </select>
+              </div>
 
-                  <div className="task-btn-row full">
-                    <button
-                      type="button"
-                      className="cancel-btn"
-                      onClick={handleCancelEdit}
-                    >
-                      Cancel
-                    </button>
-                    <button type="submit" className="primary-btn">
-                      Update Task
-                    </button>
-                  </div>
-                </form>
-              </>
-            ) : (
-              <>
-                <div className="modal-header">
-                  <h2>{selectedTask.title}</h2>
-                  <button
-                    className="close-btn"
-                    type="button"
-                    onClick={() => {
-                      setSelectedTask(null);
-                      setIsEditMode(false);
-                    }}
-                  >
-                    ×
-                  </button>
-                </div>
-                {selectedTask.description &&
-                  selectedTask.description.length > 0 && (
-                    <p className="task-modal-desc">
-                      {selectedTask.description}
-                    </p>
-                  )}
-                <div className="task-modal-meta">
-                  <p>
-                    <strong>Status:</strong>{" "}
-                    <span className={`status ${selectedTask.status}`}>
-                      {selectedTask.status.replace("-", " ")}
-                    </span>
-                  </p>
-                  <p>
-                    <strong>Priority:</strong>{" "}
-                    <span className={`priority ${selectedTask.priority}`}>
-                      {selectedTask.priority}
-                    </span>
-                  </p>
-                  {selectedTask.assignedTo && (
-                    <p>
-                      <strong>Assigned To:</strong>{" "}
-                      {selectedTask.assignedTo?.fullName?.firstName ||
-                        selectedTask.assignedTo?.firstName}{" "}
-                      {selectedTask.assignedTo?.fullName?.lastName ||
-                        selectedTask.assignedTo?.lastName}
-                    </p>
-                  )}
-                </div>
-
-                <div className="task-modal-actions">
-                  <button
-                    className="edit-btn-modal"
-                    onClick={() => handleEditClick(selectedTask, { stopPropagation: () => {} })}
-                  >
-                    <RiPencilLine size={16} /> Edit Task
-                  </button>
-                  <button
-                    className="delete-btn-modal"
-                    onClick={() => handleDeleteClick(selectedTask, { stopPropagation: () => {} })}
-                  >
-                    <RiDeleteBinLine size={16} /> Delete Task
-                  </button>
-                </div>
-              </>
-            )}
+              <div className="task-btn-row full">
+                <button
+                  type="button"
+                  className="cancel-btn"
+                  onClick={handleCancelEdit}
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="primary-btn">
+                  Update Task
+                </button>
+              </div>
+            </form>
           </div>
         </div>
+      )}
+      {showDetailsModal && selectedTask && (
+        <TaskDetailsModal 
+          task={selectedTask} 
+          onClose={() => {
+            setShowDetailsModal(false);
+            setSelectedTask(null);
+          }} 
+        />
       )}
     </div>
   );

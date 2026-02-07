@@ -24,70 +24,92 @@
 }
 
 .add-task-btn {
-  background: var(--primary-color);
+  background: #1c1c1c;
   color: white;
-  padding: 12px 16px;
-  border-radius: var(--border-radius-sm);
+  padding: 12px 20px;
+  border-radius: 12px;
   border: none;
   cursor: pointer;
-  font-weight: var(--font-weight-medium);
-  font-size: var(--font-size-sm);
-  box-shadow: var(--box-shadow-sm);
-  transition: all var(--transition-base);
+  font-weight: 600;
+  font-size: 0.9rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: var(--spacing-sm);
+  white-space: nowrap;
+  min-width: fit-content;
 }
 
 .add-task-btn:hover {
-  background: var(--primary-hover);
-  box-shadow: var(--box-shadow-md);
-  transform: translateY(-1px);
+  background: #000;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
 }
 
 /* Tasks Table Container */
 .tasks-table-container {
   width: 100%;
   overflow-x: auto;
-  background: var(--surface-color);
-  border-radius: var(--border-radius-sm);
-  box-shadow: var(--box-shadow-sm);
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: visible;
 }
 
 .tasks-table {
   width: 100%;
-  border-collapse: collapse;
-  background: var(--surface-color);
+  border-collapse: separate;
+  border-spacing: 0 8px;
+  background: transparent;
 }
 
 
 .tasks-table th {
-  padding: var(--spacing-md);
+  padding: 0 24px 8px 24px;
   text-align: left;
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-bold);
-  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #888;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 1.2px;
   white-space: nowrap;
 }
 
 
 .tasks-table tbody tr {
-  border-bottom: 1px solid var(--border-light);
-  transition: all var(--transition-base);
-  cursor: pointer;
+  background: white;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+  border-radius: 16px;
+  border: none;
 }
 
 .tasks-table tbody tr:hover {
-  background: var(--background-light);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+  background: white;
+  z-index: 1;
+  position: relative;
+}
+
+.tasks-table tbody tr td:first-child {
+  border-top-left-radius: 16px;
+  border-bottom-left-radius: 16px;
+}
+
+.tasks-table tbody tr td:last-child {
+  border-top-right-radius: 16px;
+  border-bottom-right-radius: 16px;
 }
 
 .tasks-table td {
-  padding: var(--spacing-md);
-  font-size: var(--font-size-sm);
-  color: var(--text-color);
+  padding: 20px 24px;
+  font-size: 0.95rem;
+  color: #333;
   vertical-align: middle;
+  border: none;
 }
 
 .task-title-cell {
@@ -372,13 +394,14 @@
 }
 
 .task-modal-overlay .task-modal {
-  width: 100%;
-  max-width: 920px;
-  background: var(--surface-color);
-  border-radius: var(--border-radius-sm);
-  padding: var(--spacing-xl);
-  box-shadow: var(--box-shadow-xl);
-  animation: fadeIn var(--transition-base);
+  width: 90%;
+  max-width: 600px;
+  background: white;
+  border-radius: 20px;
+  padding: 32px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+  animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .task-modal .task-modal-desc {
@@ -393,21 +416,28 @@
 }
 
 .task-modal button.close-btn {
-  font-size: var(--font-size-sm);
-  border-radius: var(--border-radius-sm);
-  background: var(--error-bg);
-  color: var(--error-color);
+  background: #f5f5f5;
   border: none;
+  font-size: 1.25rem;
+  color: #666;
   cursor: pointer;
-  padding: 8px 12px;
-  font-weight: var(--font-weight-medium);
-  transition: all var(--transition-base);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  /* Reset padding/font-weight from previous style if needed */
+  padding: 0;
+  font-weight: normal;
 }
 
 .task-modal button.close-btn:hover {
-  background: var(--error-color);
-  color: white;
-  box-shadow: var(--box-shadow-sm);
+  background: #eee;
+  color: #000;
+  transform: rotate(90deg);
+  box-shadow: none;
 }
 
 /* Task Modal Header */
@@ -508,16 +538,18 @@
 .task-modal .form-group input,
 .task-modal .form-group select,
 .task-modal .form-group textarea {
+  width: 100%;
   padding: 14px 16px;
-  border: none;
-  border-radius: var(--border-radius-sm);
-  font-size: var(--font-size-sm);
-  resize: none;
-  background: var(--background-light);
-  box-shadow: var(--box-shadow-sm);
-  transition: all var(--transition-slow);
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  resize: vertical;
+  background: #fafafa;
+  color: #111;
+  transition: all 0.2s ease;
   outline: none;
-  font-family: var(--font-family-base);
+  box-shadow: none;
 }
 
 .task-modal .form-group textarea {
@@ -533,9 +565,10 @@
 .task-modal .form-group input:focus,
 .task-modal .form-group select:focus,
 .task-modal .form-group textarea:focus {
-  background: var(--background-hover);
-  box-shadow: var(--box-shadow-md);
-  transform: translateY(-1px);
+  border-color: #111;
+  background: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transform: none;
 }
 
 .task-modal .task-btn-row {
@@ -547,39 +580,40 @@
 }
 
 .task-modal .cancel-btn {
-  padding: 12px 16px;
-  border: 1px solid var(--border-color);
-  background: var(--surface-color);
-  border-radius: var(--border-radius-sm);
+  padding: 12px 24px;
+  background: white;
+  color: #666;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
   cursor: pointer;
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  color: var(--text-color);
-  transition: all var(--transition-base);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .task-modal .cancel-btn:hover {
-  background: var(--background-color);
-  border-color: var(--text-color-muted);
+  background: #f9fafb;
+  color: #111;
+  border-color: #d1d5db;
 }
 
 .task-modal .primary-btn {
-  padding: 12px 16px;
-  background: var(--primary-color);
-  color: #fff;
+  padding: 12px 24px;
+  background: #1c1c1c;
+  color: white;
   border: none;
-  border-radius: var(--border-radius-sm);
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
   cursor: pointer;
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  box-shadow: var(--box-shadow-sm);
-  transition: all var(--transition-base);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .task-modal .primary-btn:hover:not(:disabled) {
-  background: var(--primary-hover);
-  box-shadow: var(--box-shadow-md);
+  background: #000;
   transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .task-modal .primary-btn:disabled {
