@@ -4,6 +4,7 @@
   background: var(--background-color);
   gap: var(--spacing-lg);
   position: relative;
+  font-family: var(--font-family-base);
 }
 
 /* MOBILE MENU TOGGLE */
@@ -41,13 +42,13 @@
 
 /* SIDEBAR */
 .emp-sidebar {
-  width: 280px;
-  background: #111;
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 32px 24px;
+  width: 250px;
+  background: #1c1c1c;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  padding: var(--spacing-lg);
   display: flex;
   flex-direction: column;
-  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--box-shadow-sm);
   position: sticky;
   top: 0;
   height: 100vh;
@@ -60,14 +61,16 @@
 .emp-sidebar-header {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  padding-bottom: var(--spacing-lg);
-  margin-bottom: var(--spacing-lg);
-  border-bottom: 1px solid var(--border-light);
+  align-items: flex-start;
+  /* Align left to match Admin brand? Or keep center? Admin uses brand class which is left aligned usually but flex-start in button. Admin brand is just distinct element. */
+  /* Sidebar.css puts brand at top with margin-bottom: var(--spacing-xl). */
+  margin-bottom: var(--spacing-xl);
+  padding-bottom: 0;
+  border-bottom: none;
 }
 
 .emp-info {
-  text-align: center;
+  text-align: left;
   width: 100%;
 }
 
@@ -75,8 +78,7 @@
   font-size: var(--font-size-lg);
   font-weight: var(--font-weight-bold);
   color: white;
-  margin: 0 0 var(--spacing-xs) 0;
-  letter-spacing: -0.02em;
+  margin: 0;
 }
 
 .emp-status {
@@ -105,62 +107,19 @@
 .task-type-nav {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-bottom: 40px;
-  padding-bottom: 24px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  gap: var(--spacing-xs);
+  flex: 1;
+  overflow-y: auto;
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
 }
 
 .task-type-btn {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 16px 20px;
-  border: 1px solid transparent;
-  background: transparent;
-  color: #888;
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  border-radius: 12px;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  text-align: left;
-  width: 100%;
-}
-
-.task-type-btn:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: white;
-  transform: translateX(4px);
-}
-
-.task-type-btn.active {
-  background: #222;
-  color: white;
-  font-weight: 600;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  padding-left: 20px;
-  /* Reset padding since we removed the border */
-}
-
-.task-type-btn svg {
-  flex-shrink: 0;
-  width: 24px;
-  height: 24px;
-}
-
-.emp-sidebar-footer {
-  margin-top: auto;
-  padding-top: var(--spacing-md);
-  border-top: 1px solid var(--border-light);
-}
-
-.emp-logout-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--spacing-sm);
+  justify-content: flex-start;
+  gap: var(--spacing-md);
   width: 100%;
   padding: 12px 16px;
   border-radius: var(--border-radius-sm);
@@ -170,13 +129,61 @@
   cursor: pointer;
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
-  color: var(--error-color);
+  color: rgba(255, 255, 255, 0.7);
   transition: all var(--transition-base);
 }
 
+.task-type-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  transform: none;
+}
+
+.task-type-btn.active {
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  font-weight: var(--font-weight-medium);
+  border: none;
+  box-shadow: none;
+  padding-left: 16px;
+}
+
+.task-type-btn svg {
+  flex-shrink: 0;
+  width: 20px;
+  /* Admin sidebar usually has smaller icons or standard size */
+  height: 20px;
+}
+
+.emp-sidebar-footer {
+  margin-top: auto;
+  padding-top: var(--spacing-md);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.emp-logout-btn {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--spacing-sm);
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: var(--border-radius-sm);
+  border: none;
+  background: #1c1c1c;
+  text-align: left;
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: white;
+  transition: all var(--transition-base);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
 .emp-logout-btn:hover {
-  background: var(--error-bg);
-  color: var(--error-color);
+  background: #000000;
+  border-color: rgba(255, 255, 255, 0.3);
+  color: white;
 }
 
 /* MAIN CONTENT */
@@ -785,8 +792,8 @@
 /* TABLET STYLES */
 @media (max-width: 1024px) {
   .emp-sidebar {
-    width: 240px;
-    padding: var(--spacing-lg);
+    width: 220px;
+    padding: var(--spacing-md);
   }
 
   .task-content {
