@@ -33,9 +33,9 @@ const EmployeeDashboard = () => {
   
   // Search and filter states
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all'); // 'all', 'pending', 'in-progress', 'completed'
-  const [priorityFilter, setPriorityFilter] = useState('all'); // 'all', 'low', 'medium', 'high'
-  const [dateFilter, setDateFilter] = useState('all'); // 'all', 'today', 'week', 'month'
+  const [statusFilter, setStatusFilter] = useState(['all']);
+  const [priorityFilter, setPriorityFilter] = useState(['all']);
+  const [dateFilter, setDateFilter] = useState(['all']);
   const socket = useSocket();
 
   // Load tasks assigned to the current employee on mount
@@ -193,17 +193,17 @@ const EmployeeDashboard = () => {
     }
     
     // Apply status filter
-    if (statusFilter !== 'all') {
-      tasks = tasks.filter(task => (task.status || 'pending') === statusFilter);
+    if (!statusFilter.includes('all')) {
+      tasks = tasks.filter(task => statusFilter.includes(task.status || 'pending'));
     }
     
     // Apply priority filter
-    if (priorityFilter !== 'all') {
-      tasks = tasks.filter(task => (task.priority || 'medium') === priorityFilter);
+    if (!priorityFilter.includes('all')) {
+      tasks = tasks.filter(task => priorityFilter.includes(task.priority || 'medium'));
     }
     
     // Apply date filter
-    if (dateFilter !== 'all') {
+    if (!dateFilter.includes('all')) {
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       
@@ -213,24 +213,24 @@ const EmployeeDashboard = () => {
         
         const taskDay = new Date(taskDate.getFullYear(), taskDate.getMonth(), taskDate.getDate());
         
-        if (dateFilter === 'today') {
-          return taskDay.getTime() === today.getTime();
-        } else if (dateFilter === 'week') {
-          const weekAgo = new Date(today);
-          weekAgo.setDate(weekAgo.getDate() - 7);
-          return taskDay >= weekAgo;
-        } else if (dateFilter === 'month') {
-          const monthAgo = new Date(today);
-          monthAgo.setMonth(monthAgo.getMonth() - 1);
-          return taskDay >= monthAgo;
+        let match = false;
+        if (dateFilter.includes('today') && taskDay.getTime() === today.getTime()) match = true;
+        if (dateFilter.includes('week')) {
+           const weekAgo = new Date(today);
+           weekAgo.setDate(weekAgo.getDate() - 7);
+           if (taskDay >= weekAgo) match = true;
         }
-        return true;
+        if (dateFilter.includes('month')) {
+           const monthAgo = new Date(today);
+           monthAgo.setMonth(monthAgo.getMonth() - 1);
+           if (taskDay >= monthAgo) match = true;
+        }
+        return match;
       });
     }
     
     return tasks;
   }, [activeTaskView, dailyTasks, regularTasks, searchQuery, statusFilter, priorityFilter, dateFilter]);
-
 
   // Calendar helper functions
   const getDaysInMonth = (date) => {
@@ -242,11 +242,9 @@ const EmployeeDashboard = () => {
     const startingDayOfWeek = firstDay.getDay();
     
     const days = [];
-    // Add empty cells for days before the first day of the month
     for (let i = 0; i < startingDayOfWeek; i++) {
       days.push(null);
     }
-    // Add all days of the month
     for (let i = 1; i <= daysInMonth; i++) {
       days.push(new Date(year, month, i));
     }
@@ -378,7 +376,6 @@ const EmployeeDashboard = () => {
     ? `${user.fullName.firstName} ${user.fullName.lastName}`
     : user?.email || "Employee";
 
-
   return (
     <div className="emp-main-wrapper">
       {/* MOBILE MENU TOGGLE */}
@@ -410,10 +407,6 @@ const EmployeeDashboard = () => {
           </button>
           <div className="emp-info">
             <h3 className="emp-name">{employeeName}</h3>
-            <div className="emp-status">
-              <span className="status-dot active"></span>
-              <span>Active</span>
-            </div>
           </div>
         </div>
 
@@ -488,16 +481,18 @@ const EmployeeDashboard = () => {
             />
           </div>
           
-          
           <button 
             className="filter-toggle-btn" 
             onClick={() => setIsFilterOpen(true)}
           >
             <RiFilter3Line size={20} />
             <span>Filters</span>
-            {(statusFilter !== 'all' || priorityFilter !== 'all' || dateFilter !== 'all') && (
-              <span className="filter-indicator-dot"></span>
-            )}
+            {(() => {
+              const count = (statusFilter.includes('all') ? 0 : statusFilter.length) + 
+                            (priorityFilter.includes('all') ? 0 : priorityFilter.length) + 
+                            (dateFilter.includes('all') ? 0 : dateFilter.length);
+              return count > 0 && <span className="filter-count-badge">{count}</span>;
+            })()}
           </button>
         </div>
 
@@ -520,29 +515,31 @@ const EmployeeDashboard = () => {
               <span className="filter-label">Status</span>
               <div className="filter-pills vertical">
                 <button
-                  className={`filter-pill ${statusFilter === 'all' ? 'active' : ''}`}
-                  onClick={() => setStatusFilter('all')}
+                  className={`filter-pill ${statusFilter.includes('all') ? 'active' : ''}`}
+                  onClick={() => setStatusFilter(['all'])}
                 >
                   All Status
                 </button>
-                <button
-                  className={`filter-pill ${statusFilter === 'pending' ? 'active' : ''}`}
-                  onClick={() => setStatusFilter('pending')}
-                >
-                  Pending
-                </button>
-                <button
-                  className={`filter-pill ${statusFilter === 'in-progress' ? 'active' : ''}`}
-                  onClick={() => setStatusFilter('in-progress')}
-                >
-                  In Progress
-                </button>
-                <button
-                  className={`filter-pill ${statusFilter === 'completed' ? 'active' : ''}`}
-                  onClick={() => setStatusFilter('completed')}
-                >
-                  Completed
-                </button>
+                {['pending', 'in-progress', 'completed'].map(status => (
+                  <button
+                    key={status}
+                    className={`filter-pill ${statusFilter.includes(status) ? 'active' : ''}`}
+                    onClick={() => {
+                       if (statusFilter.includes('all')) {
+                           setStatusFilter([status]);
+                       } else {
+                           if (statusFilter.includes(status)) {
+                               const newFilters = statusFilter.filter(s => s !== status);
+                               setStatusFilter(newFilters.length ? newFilters : ['all']);
+                           } else {
+                               setStatusFilter([...statusFilter, status]);
+                           }
+                       }
+                    }}
+                  >
+                    {status.charAt(0).toUpperCase() + status.slice(1).replace('-', ' ')}
+                  </button>
+                ))}
               </div>
             </div>
 
@@ -550,29 +547,31 @@ const EmployeeDashboard = () => {
               <span className="filter-label">Priority</span>
               <div className="filter-pills vertical">
                 <button
-                  className={`filter-pill ${priorityFilter === 'all' ? 'active' : ''}`}
-                  onClick={() => setPriorityFilter('all')}
+                  className={`filter-pill ${priorityFilter.includes('all') ? 'active' : ''}`}
+                  onClick={() => setPriorityFilter(['all'])}
                 >
                   All Priority
                 </button>
-                <button
-                  className={`filter-pill ${priorityFilter === 'low' ? 'active' : ''}`}
-                  onClick={() => setPriorityFilter('low')}
-                >
-                  Low
-                </button>
-                <button
-                  className={`filter-pill ${priorityFilter === 'medium' ? 'active' : ''}`}
-                  onClick={() => setPriorityFilter('medium')}
-                >
-                  Medium
-                </button>
-                <button
-                  className={`filter-pill ${priorityFilter === 'high' ? 'active' : ''}`}
-                  onClick={() => setPriorityFilter('high')}
-                >
-                  High
-                </button>
+                {['low', 'medium', 'high'].map(priority => (
+                  <button
+                    key={priority}
+                    className={`filter-pill ${priorityFilter.includes(priority) ? 'active' : ''}`}
+                    onClick={() => {
+                       if (priorityFilter.includes('all')) {
+                           setPriorityFilter([priority]);
+                       } else {
+                           if (priorityFilter.includes(priority)) {
+                               const newFilters = priorityFilter.filter(p => p !== priority);
+                               setPriorityFilter(newFilters.length ? newFilters : ['all']);
+                           } else {
+                               setPriorityFilter([...priorityFilter, priority]);
+                           }
+                       }
+                    }}
+                  >
+                    {priority.charAt(0).toUpperCase() + priority.slice(1)}
+                  </button>
+                ))}
               </div>
             </div>
 
@@ -580,54 +579,50 @@ const EmployeeDashboard = () => {
               <span className="filter-label">Date</span>
               <div className="filter-pills vertical">
                 <button
-                  className={`filter-pill ${dateFilter === 'all' ? 'active' : ''}`}
-                  onClick={() => setDateFilter('all')}
+                  className={`filter-pill ${dateFilter.includes('all') ? 'active' : ''}`}
+                  onClick={() => setDateFilter(['all'])}
                 >
                   All Time
                 </button>
-                <button
-                  className={`filter-pill ${dateFilter === 'today' ? 'active' : ''}`}
-                  onClick={() => setDateFilter('today')}
-                >
-                  Today
-                </button>
-                <button
-                  className={`filter-pill ${dateFilter === 'week' ? 'active' : ''}`}
-                  onClick={() => setDateFilter('week')}
-                >
-                  This Week
-                </button>
-                <button
-                  className={`filter-pill ${dateFilter === 'month' ? 'active' : ''}`}
-                  onClick={() => setDateFilter('month')}
-                >
-                  This Month
-                </button>
+                {['today', 'week', 'month'].map(date => (
+                  <button
+                    key={date}
+                    className={`filter-pill ${dateFilter.includes(date) ? 'active' : ''}`}
+                    onClick={() => {
+                       if (dateFilter.includes('all')) {
+                           setDateFilter([date]);
+                       } else {
+                           if (dateFilter.includes(date)) {
+                               const newFilters = dateFilter.filter(d => d !== date);
+                               setDateFilter(newFilters.length ? newFilters : ['all']);
+                           } else {
+                               setDateFilter([...dateFilter, date]);
+                           }
+                       }
+                    }}
+                  >
+                   {date === 'today' ? 'Today' : (date === 'week' ? 'This Week' : 'This Month')}
+                  </button>
+                ))}
               </div>
             </div>
           </div>
 
           <div className="filter-sidebar-footer">
-            {(statusFilter !== 'all' || priorityFilter !== 'all' || dateFilter !== 'all') ? (
-              <button
-                className="clear-all-filters-btn full-width"
+            <button
+                className={`clear-all-filters-btn full-width ${
+                  statusFilter.includes('all') && priorityFilter.includes('all') && dateFilter.includes('all') ? 'disabled' : ''
+                }`}
                 onClick={() => {
-                  setStatusFilter('all');
-                  setPriorityFilter('all');
-                  setDateFilter('all');
+                  setStatusFilter(['all']);
+                  setPriorityFilter(['all']);
+                  setDateFilter(['all']);
                 }}
+                disabled={statusFilter.includes('all') && priorityFilter.includes('all') && dateFilter.includes('all')}
               >
                 Clear All Filters
-              </button>
-            ) : (
-                <button
-                className="clear-all-filters-btn full-width disabled"
-                disabled
-              >
-                No Active Filters
-              </button>
-            )}
-        </div>
+            </button>
+          </div>
         </div>
 
         <div className="content-with-calendar">
@@ -723,7 +718,7 @@ const EmployeeDashboard = () => {
                               </button>
                             )}
                             {(task.status || "pending") === "completed" && (
-                              <span className="completed-badge">✓ Done</span>
+                              <span className="completed-badge">Done</span>
                             )}
                           </div>
                         </td>
