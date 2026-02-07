@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { asyncLoadEmployees } from "../store/actions/employeeActions";
-import "../components/CreateTask.css";
+import "../styles/CreateTask.css";
 
 const CreateTask = ({ onCancel, onSubmit, employees: passedEmployees, preSelectedEmployee }) => {
   const dispatch = useDispatch();

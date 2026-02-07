@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { asyncCreateEmployee } from "../store/actions/employeeActions";
-import "./CreateEmployee.css";
+import "../styles/CreateEmployee.css";
 import { toast } from "sonner";
 
 const CreateEmployee = ({ onClose }) => {

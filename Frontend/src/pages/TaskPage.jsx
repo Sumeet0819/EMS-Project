@@ -10,7 +10,7 @@ import { asyncLoadEmployees } from "../store/actions/employeeActions";
 import { updateTask, deleteTask } from "../store/reducers/employeeTaskSlice";
 import { useSocket } from "../contexts/SocketContext";
 import CreateTask from "./CreateTask";
-import "../components/TaskPage.css";
+import "../styles/TaskPage.css";
 import { RiDeleteBinLine, RiPencilLine } from "@remixicon/react";
 import { toast } from "sonner";
 

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { asyncLoginuser } from "../store/actions/userActions";
-import "../components/styles/auth.css";
+import "../styles/auth.css";
 
 const Auth = () => {
   const [isEmployee, setIsEmployee] = useState(false);

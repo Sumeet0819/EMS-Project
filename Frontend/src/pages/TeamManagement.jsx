@@ -10,8 +10,8 @@ import {
 } from "../store/actions/employeeActions";
 import CreateEmployee from "../components/CreateEmployee";
 import EmployeeCard from "../components/EmployeeCard";
-import "../components/styles/TeamManagement.css";
-import "../components/styles/EmployeeCard.css";
+import "../styles/TeamManagement.css";
+import "../styles/EmployeeCard.css";
 import {toast ,Toaster } from "sonner"
 
 const TeamManagement = () => {

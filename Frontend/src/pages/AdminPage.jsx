@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import Header from "../components/Header";
 import Dashboard from "./Dashboard";
 import TeamManagement from "./TeamManagement";
-import "../components/admin.css";
+import "../styles/admin.css";
 import TaskPage from "./TaskPage";
 import Sidebar from "../components/Sidebar";
 

@@ -1,5 +1,5 @@
 import React from "react";
-import "./styles/Loader.css";
+import "../styles/Loader.css";
 
 const Loader = ({ message = "Loading...", size = "medium", fullScreen = false }) => {
   const sizeClasses = {

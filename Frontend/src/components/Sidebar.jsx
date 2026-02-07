@@ -1,7 +1,7 @@
 import React from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import "../components/styles/sidebar.css";
+import "../styles/sidebar.css";
 import { RiDashboardLine, RiGroupLine, RiLogoutBoxLine, RiTaskLine } from "@remixicon/react";
 import { asyncLogoutuser } from "../store/actions/userActions";
 

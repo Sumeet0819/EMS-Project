@@ -1,6 +1,6 @@
 import React from "react";
 import { RiMenuLine, RiCloseLine } from "@remixicon/react";
-import "./Header.css";
+import "../styles/Header.css";
 
 const Header = ({ sidebarOpen, onToggleSidebar }) => {
   return (

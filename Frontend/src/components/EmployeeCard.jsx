@@ -1,6 +1,6 @@
 import React from "react";
 import { RiPencilLine, RiDeleteBinLine, RiMailLine, RiShieldUserLine, RiUserLine } from "@remixicon/react";
-import "./styles/EmployeeCard.css";
+import "../styles/EmployeeCard.css";
 
 const EmployeeCard = ({ employee, onEdit, onDelete }) => {
   const { fullName, email, role, _id } = employee;

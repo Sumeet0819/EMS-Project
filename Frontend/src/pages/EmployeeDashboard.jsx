@@ -10,10 +10,10 @@ import { deleteTask, updateTask } from "../store/reducers/employeeTaskSlice";
 import { asyncLogoutuser } from "../store/actions/userActions";
 import { useNavigate } from "react-router-dom";
 import Loader from "../components/Loader";
-import { RiTimeLine, RiTaskLine, RiLogoutBoxLine, RiUserLine, RiMenuLine, RiCloseLine } from "@remixicon/react";
+import { RiTimeLine, RiTaskLine, RiLogoutBoxLine, RiUserLine, RiMenuLine, RiCloseLine, RiFilter3Line, RiMenuFoldLine, RiMenuUnfoldLine } from "@remixicon/react";
 import { toast } from "sonner";
 import { useSocket } from "../contexts/SocketContext";
-import "../components/EmployeeDashboard.css";
+import "../styles/EmployeeDashboard.css";
 
 const EmployeeDashboard = () => {
   const dispatch = useDispatch();
@@ -22,6 +22,8 @@ const EmployeeDashboard = () => {
   const { user } = useSelector((state) => state.userReducer);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isSidebarVisible, setIsSidebarVisible] = useState(true);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showRemarkModal, setShowRemarkModal] = useState(false);
   const [taskToSubmit, setTaskToSubmit] = useState(null);
@@ -397,8 +399,15 @@ const EmployeeDashboard = () => {
       )}
 
       {/* SIDEBAR */}
-      <aside className={`emp-sidebar ${sidebarOpen ? "sidebar-open" : ""}`}>
+      <aside className={`emp-sidebar ${sidebarOpen ? "sidebar-open" : ""} ${!isSidebarVisible ? "sidebar-collapsed" : ""}`}>
         <div className="emp-sidebar-header">
+          <button 
+            className="sidebar-collapse-btn"
+            onClick={() => setIsSidebarVisible(false)}
+            title="Collapse Sidebar"
+          >
+            <RiMenuFoldLine size={20} />
+          </button>
           <div className="emp-info">
             <h3 className="emp-name">{employeeName}</h3>
             <div className="emp-status">
@@ -432,28 +441,6 @@ const EmployeeDashboard = () => {
           </button>
         </div>
 
-        {/* <div className="emp-sidebar-stats">
-          <div className="emp-stat-item">
-            <RiTaskLine size={20} />
-            <div>
-              <span className="stat-value">{taskStats.totalTasks}</span>
-              <span className="stat-label">Total Tasks</span>
-            </div>
-          </div>
-          <div className="emp-stat-item">
-            <RiTimeLine size={20} />
-            <div>
-              <span className="stat-value">{taskStats.activeTasks}</span>
-              <span className="stat-label">Active</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="emp-sidebar-clock">
-          <RiTimeLine size={18} />
-          <div className="clock-time">{formatClockTime(currentTime)}</div>
-        </div> */}
-
         <div className="emp-sidebar-footer">
           <button 
             className="emp-logout-btn" 
@@ -471,9 +458,20 @@ const EmployeeDashboard = () => {
       {/* MAIN CONTENT */}
       <div className="task-content">
         <div className="section-header">
-          <div>
-            <h2 className="section-title">My Tasks</h2>
-            <p className="section-subtitle">Tasks assigned to you</p>
+          <div className="header-left-content">
+            {!isSidebarVisible && (
+              <button 
+                className="sidebar-expand-btn"
+                onClick={() => setIsSidebarVisible(true)}
+                title="Expand Sidebar"
+              >
+                <RiMenuUnfoldLine size={24} />
+              </button>
+            )}
+            <div>
+              <h2 className="section-title">My Tasks</h2>
+              <p className="section-subtitle">Tasks assigned to you</p>
+            </div>
           </div>
         </div>
 
@@ -483,21 +481,48 @@ const EmployeeDashboard = () => {
             <input
               type="text"
               className="search-input"
-              placeholder="🔍 Search tasks by title, description, or remarks..."
+              placeholder="Search tasks by title, description, or remarks..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
           
-          <div className="filter-pills-container">
+          
+          <button 
+            className="filter-toggle-btn" 
+            onClick={() => setIsFilterOpen(true)}
+          >
+            <RiFilter3Line size={20} />
+            <span>Filters</span>
+            {(statusFilter !== 'all' || priorityFilter !== 'all' || dateFilter !== 'all') && (
+              <span className="filter-indicator-dot"></span>
+            )}
+          </button>
+        </div>
+
+        {/* Filter Sidebar Overlay */}
+        {isFilterOpen && (
+          <div className="filter-overlay" onClick={() => setIsFilterOpen(false)}></div>
+        )}
+
+        {/* Filter Sidebar */}
+        <div className={`filter-sidebar ${isFilterOpen ? 'open' : ''}`}>
+          <div className="filter-sidebar-header">
+            <h3>Filters</h3>
+            <button className="close-filter-btn" onClick={() => setIsFilterOpen(false)}>
+              <RiCloseLine size={24} />
+            </button>
+          </div>
+          
+          <div className="filter-sidebar-content">
             <div className="filter-section">
-              <span className="filter-label">Status:</span>
-              <div className="filter-pills">
+              <span className="filter-label">Status</span>
+              <div className="filter-pills vertical">
                 <button
                   className={`filter-pill ${statusFilter === 'all' ? 'active' : ''}`}
                   onClick={() => setStatusFilter('all')}
                 >
-                  All
+                  All Status
                 </button>
                 <button
                   className={`filter-pill ${statusFilter === 'pending' ? 'active' : ''}`}
@@ -521,13 +546,13 @@ const EmployeeDashboard = () => {
             </div>
 
             <div className="filter-section">
-              <span className="filter-label">Priority:</span>
-              <div className="filter-pills">
+              <span className="filter-label">Priority</span>
+              <div className="filter-pills vertical">
                 <button
                   className={`filter-pill ${priorityFilter === 'all' ? 'active' : ''}`}
                   onClick={() => setPriorityFilter('all')}
                 >
-                  All
+                  All Priority
                 </button>
                 <button
                   className={`filter-pill ${priorityFilter === 'low' ? 'active' : ''}`}
@@ -551,8 +576,8 @@ const EmployeeDashboard = () => {
             </div>
 
             <div className="filter-section">
-              <span className="filter-label">Date:</span>
-              <div className="filter-pills">
+              <span className="filter-label">Date</span>
+              <div className="filter-pills vertical">
                 <button
                   className={`filter-pill ${dateFilter === 'all' ? 'active' : ''}`}
                   onClick={() => setDateFilter('all')}
@@ -579,21 +604,29 @@ const EmployeeDashboard = () => {
                 </button>
               </div>
             </div>
+          </div>
 
-            {(searchQuery || statusFilter !== 'all' || priorityFilter !== 'all' || dateFilter !== 'all') && (
+          <div className="filter-sidebar-footer">
+            {(statusFilter !== 'all' || priorityFilter !== 'all' || dateFilter !== 'all') ? (
               <button
-                className="clear-all-filters-btn"
+                className="clear-all-filters-btn full-width"
                 onClick={() => {
-                  setSearchQuery('');
                   setStatusFilter('all');
                   setPriorityFilter('all');
                   setDateFilter('all');
                 }}
               >
-                ✕ Clear All
+                Clear All Filters
+              </button>
+            ) : (
+                <button
+                className="clear-all-filters-btn full-width disabled"
+                disabled
+              >
+                No Active Filters
               </button>
             )}
-          </div>
+        </div>
         </div>
 
         <div className="content-with-calendar">

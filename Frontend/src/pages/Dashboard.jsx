@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import "../components/styles/dashboard.css";
+import "../styles/dashboard.css";
 import StatCard from "../components/StatCard";
 import ActivityList from "../components/ActivityList";
 import TaskDistribution from "../components/TaskDistribution";

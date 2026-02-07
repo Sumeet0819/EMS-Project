@@ -1,5 +1,5 @@
 import React from "react";
-import "./TaskDistribution.css";
+import "../styles/TaskDistribution.css";
 
 const TaskDistribution = ({ completed, progress, pending }) => {
   const total = completed + progress + pending;

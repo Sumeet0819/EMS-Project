@@ -1,5 +1,5 @@
 import React from 'react'
-import './global.css'
+import './styles/global.css'
 import MainRoutes from './routes/MainRoutes'
 import { Toaster } from 'sonner'
 const App = () => {

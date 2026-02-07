@@ -1,5 +1,5 @@
 import React from "react";
-import "./ActivityList.css";
+import "../styles/ActivityList.css";
 
 const ActivityList = ({ data }) => {
   return (
