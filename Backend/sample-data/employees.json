@@ -1,0 +1,92 @@
+[
+    {
+        "email": "admin@ems.com",
+        "fullName": {
+            "firstName": "Admin",
+            "lastName": "User"
+        },
+        "password": "$2b$10$YourHashedPasswordHere1",
+        "role": "admin"
+    },
+    {
+        "email": "john.doe@ems.com",
+        "fullName": {
+            "firstName": "John",
+            "lastName": "Doe"
+        },
+        "password": "$2b$10$YourHashedPasswordHere2",
+        "role": "employee"
+    },
+    {
+        "email": "jane.smith@ems.com",
+        "fullName": {
+            "firstName": "Jane",
+            "lastName": "Smith"
+        },
+        "password": "$2b$10$YourHashedPasswordHere3",
+        "role": "employee"
+    },
+    {
+        "email": "michael.johnson@ems.com",
+        "fullName": {
+            "firstName": "Michael",
+            "lastName": "Johnson"
+        },
+        "password": "$2b$10$YourHashedPasswordHere4",
+        "role": "employee"
+    },
+    {
+        "email": "sarah.williams@ems.com",
+        "fullName": {
+            "firstName": "Sarah",
+            "lastName": "Williams"
+        },
+        "password": "$2b$10$YourHashedPasswordHere5",
+        "role": "employee"
+    },
+    {
+        "email": "david.brown@ems.com",
+        "fullName": {
+            "firstName": "David",
+            "lastName": "Brown"
+        },
+        "password": "$2b$10$YourHashedPasswordHere6",
+        "role": "employee"
+    },
+    {
+        "email": "emily.davis@ems.com",
+        "fullName": {
+            "firstName": "Emily",
+            "lastName": "Davis"
+        },
+        "password": "$2b$10$YourHashedPasswordHere7",
+        "role": "employee"
+    },
+    {
+        "email": "robert.miller@ems.com",
+        "fullName": {
+            "firstName": "Robert",
+            "lastName": "Miller"
+        },
+        "password": "$2b$10$YourHashedPasswordHere8",
+        "role": "employee"
+    },
+    {
+        "email": "lisa.wilson@ems.com",
+        "fullName": {
+            "firstName": "Lisa",
+            "lastName": "Wilson"
+        },
+        "password": "$2b$10$YourHashedPasswordHere9",
+        "role": "employee"
+    },
+    {
+        "email": "james.moore@ems.com",
+        "fullName": {
+            "firstName": "James",
+            "lastName": "Moore"
+        },
+        "password": "$2b$10$YourHashedPasswordHere10",
+        "role": "employee"
+    }
+]

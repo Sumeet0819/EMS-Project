@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   RiAddLine, RiPencilLine, RiDeleteBinLine, RiCloseLine
 } from "@remixicon/react";
+import SearchBar from "../components/common/SearchBar";
+import ViewToggle from "../components/common/ViewToggle";
 import {
   asyncLoadEmployees,
   asyncDeleteEmployee,
@@ -20,6 +22,8 @@ const TeamManagement = () => {
   const [isCreateEmployee, setCreateEmployee] = useState(false);
   const [isEditModalOpen, setEditModalOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [viewMode, setViewMode] = useState('list'); // 'list' or 'grid'
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Load employees on mount
   useEffect(() => {
@@ -89,6 +93,16 @@ const handleDeleteEmployee = (id) => {
       toast.success("Employee Details Updated Successfully")
   };
 
+  const filteredEmployees = useMemo(() => {
+    return employees.filter((emp) => {
+      const firstName = emp.fullName?.firstName || emp.firstName || "";
+      const lastName = emp.fullName?.lastName || emp.lastName || "";
+      const fullName = `${firstName} ${lastName}`.toLowerCase();
+      const email = (emp.email || "").toLowerCase();
+      const query = searchQuery.toLowerCase();
+      return fullName.includes(query) || email.includes(query);
+    });
+  }, [employees, searchQuery]);
 
   return (
     <div className="team-layout">
@@ -98,77 +112,142 @@ const handleDeleteEmployee = (id) => {
             <h1>Team Management</h1>
             <p>Manage your employees and their roles</p>
           </div>
-          <button className="add-employee-btn" onClick={handleCreateEmployee}>
-            <span className="icon-btn">
-              <RiAddLine size={16} />
-            </span>
-            Add Employee
-          </button>
+          <div className="header-actions">
+            <SearchBar 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search employees..."
+            />
+            <ViewToggle 
+              viewMode={viewMode}
+              setViewMode={setViewMode}
+            />
+            <button className="add-employee-btn" onClick={handleCreateEmployee}>
+              <span className="icon-btn">
+                <RiAddLine size={16} />
+              </span>
+              Add Employee
+            </button>
+          </div>
         </div>
 
         <div className="team-table-card">
-          <h2 data-count={employees.length > 0 ? `${employees.length} ${employees.length === 1 ? 'Employee' : 'Employees'}` : ''}>
+          <h2 data-count={filteredEmployees.length > 0 ? `${filteredEmployees.length} ${filteredEmployees.length === 1 ? 'Employee' : 'Employees'}` : ''}>
             All Employees
           </h2>
-          <div className="employees-table-container">
-            {employees.length > 0 ? (
-              <table className="employees-table">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Role</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {employees.map((emp) => (
-                    <tr key={emp._id || emp.id}>
-                      <td className="employee-name-cell">
-                        <strong>
-                          {emp.fullName?.firstName || emp.firstName} {emp.fullName?.lastName || emp.lastName}
-                        </strong>
-                      </td>
-                      <td className="employee-email-cell">{emp.email}</td>
-                      <td>
-                        <span className={`role-badge ${emp.role}`}>
-                          {emp.role}
-                        </span>
-                      </td>
-                      <td className="employee-actions-cell">
-                        <div className="employee-actions">
+          
+          {viewMode === 'list' ? (
+            <div className="employees-table-container">
+              {filteredEmployees.length > 0 ? (
+                <table className="employees-table">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Email</th>
+                      <th>Role</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredEmployees.map((emp) => (
+                      <tr key={emp._id || emp.id}>
+                        <td className="employee-name-cell">
+                          <strong>
+                            {emp.fullName?.firstName || emp.firstName} {emp.fullName?.lastName || emp.lastName}
+                          </strong>
+                        </td>
+                        <td className="employee-email-cell">{emp.email}</td>
+                        <td>
+                          <span className={`role-badge ${emp.role}`}>
+                            {emp.role}
+                          </span>
+                        </td>
+                        <td className="employee-actions-cell">
+                          <div className="employee-actions">
+                            <button
+                              className="edit-btn"
+                              onClick={() => handleEdit(emp)}
+                              title="Edit Employee"
+                            >
+                              <RiPencilLine size={18} />
+                            </button>
+                            <button
+                              className="delete-btn"
+                              onClick={() => handleDeleteEmployee(emp._id || emp.id)}
+                              title="Delete Employee"
+                            >
+                              <RiDeleteBinLine size={18} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <div className="empty-state">
+                  <div className="empty-state-icon"><img src="./emp.svg" alt="" /></div>
+                  <h3>No Employees Yet</h3>
+                  <p>Get started by adding your first employee to the team.</p>
+                  <button className="empty-state-btn" onClick={handleCreateEmployee}>
+                    <RiAddLine size={16} />
+                    Add First Employee
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="employees-grid-container">
+              {filteredEmployees.length > 0 ? (
+                <div className="employees-grid">
+                  {filteredEmployees.map((emp) => (
+                    <div key={emp._id || emp.id} className="employee-grid-card">
+                      <div className="employee-card-header">
+                        <div className="employee-avatar">
+                          {(emp.fullName?.firstName?.[0] || emp.firstName?.[0] || 'E').toUpperCase()}
+                        </div>
+                        <div className="employee-card-actions">
                           <button
-                            className="edit-btn"
+                            className="edit-btn-card"
                             onClick={() => handleEdit(emp)}
                             title="Edit Employee"
                           >
-                            <RiPencilLine size={18} />
+                            <span style={{ color: "var(--primary-color)" }}><RiPencilLine size={16} /></span>
                           </button>
                           <button
-                            className="delete-btn"
+                            className="delete-btn-card"
                             onClick={() => handleDeleteEmployee(emp._id || emp.id)}
                             title="Delete Employee"
                           >
-                            <RiDeleteBinLine size={18} />
+                            <span style={{ color: "var(--primary-color)" }}><RiDeleteBinLine size={16} /></span>
                           </button>
                         </div>
-                      </td>
-                    </tr>
+                      </div>
+                      <div className="employee-card-body">
+                        <h3 className="employee-card-name">
+                          {emp.fullName?.firstName || emp.firstName} {emp.fullName?.lastName || emp.lastName}
+                        </h3>
+                        <p className="employee-card-email">{emp.email}</p>
+                        <span className={`role-badge ${emp.role}`}>
+                          {emp.role}
+                        </span>
+                      </div>
+                    </div>
                   ))}
-                </tbody>
-              </table>
-            ) : (
-              <div className="empty-state">
-                <div className="empty-state-icon">👥</div>
-                <h3>No Employees Yet</h3>
-                <p>Get started by adding your first employee to the team.</p>
-                <button className="empty-state-btn" onClick={handleCreateEmployee}>
-                  <RiAddLine size={16} />
-                  Add First Employee
-                </button>
-              </div>
-            )}
-          </div>
+                </div>
+              ) : (
+                <div className="empty-state">
+                  <div className="empty-state-icon"><img src="./emp.svg" alt="" /></div>
+                  <h3>No Employees Yet</h3>
+                  <p>Get started by adding your first employee to the team.</p>
+                  <button className="empty-state-btn" onClick={handleCreateEmployee}>
+                    <RiAddLine size={16} />
+                    Add First Employee
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
       {isCreateEmployee && (

@@ -1,25 +1,39 @@
 :root {
-  /* Color System - Modern Minimalist */
-  --primary-color: #007bff;
-  --primary-hover: #0056b3;
-  --secondary-color: #6c757d;
-  --accent-color: #17a2b8;
-  --surface-color: #ffffff;
-  --background-color: #f5f5f5;
-  --background-light: rgba(0, 0, 0, 0.03);
-  --background-hover: rgba(0, 0, 0, 0.05);
-  --error-color: #dc3545;
-  --error-bg: #fee;
-  --success-color: #28a745;
-  --success-bg: #d4edda;
-  --warning-color: #ffc107;
-  --warning-bg: #fff3cd;
-  --info-color: #17a2b8;
-  --info-bg: #d1ecf1;
-  --text-color: #212529;
-  --text-color-muted: #6c757d;
-  --border-color: rgba(0, 0, 0, 0.1);
-  --border-light: rgba(0, 0, 0, 0.05);
+  /* Color System - Modern Clean Design */
+  --primary-color: #1ABC9C;
+  --primary-hover: #16A085;
+  --primary-light: #E8F8F5;
+  --secondary-color: #95A5A6;
+  --accent-color: #3498DB;
+  --surface-color: #FFFFFF;
+  --background-color: #F5F6FA;
+  --background-light: #FAFBFC;
+  --background-hover: #F0F1F5;
+
+  /* Status Colors - Soft Palette */
+  --error-color: #E74C3C;
+  --error-bg: #FADBD8;
+  --error-light: #FADBD8;
+  --success-color: #27AE60;
+  --success-bg: #D5F4E6;
+  --success-light: #D5F4E6;
+  --warning-color: #F39C12;
+  --warning-bg: #FCF3CF;
+  --warning-light: #FCF3CF;
+  --info-color: #3498DB;
+  --info-bg: #D6EAF8;
+  --info-light: #D6EAF8;
+
+  /* Text Colors */
+  --text-color: #2C3E50;
+  --text-color-light: #34495E;
+  --text-color-muted: #7F8C8D;
+  --text-color-disabled: #BDC3C7;
+
+  /* Border Colors */
+  --border-color: #E8EAED;
+  --border-light: #F0F1F5;
+  --border-dark: #D1D5DB;
 
   /* Typography Scale */
   --font-family-base: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
@@ -61,18 +75,23 @@
   --spacing-xl: 2rem;
   --spacing-2xl: 3rem;
 
-  /* Border Radius Scale - Small Boxy Design */
-  --border-radius-sm: 0.25rem;
-  --border-radius-md: 0.25rem;
-  --border-radius-lg: 0.25rem;
-  --border-radius-xl: 0.25rem;
-  --border-radius-full: 0.25rem;
+  /* Border Radius Scale - Medium Modern Design */
+  --border-radius-sm: 0.5rem;
+  /* 8px */
+  --border-radius-md: 0.75rem;
+  /* 12px */
+  --border-radius-lg: 1rem;
+  /* 16px */
+  --border-radius-xl: 1.25rem;
+  /* 20px */
+  --border-radius-full: 9999px;
+  /* Full rounded */
 
   /* Shadow Tokens - Subtle and Modern */
-  --box-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
-  --box-shadow-md: 0 2px 8px rgba(0, 0, 0, 0.1);
-  --box-shadow-lg: 0 4px 14px rgba(0, 0, 0, 0.12);
-  --box-shadow-xl: 0 8px 24px rgba(0, 0, 0, 0.15);
+  --box-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04);
+  --box-shadow-md: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --box-shadow-lg: 0 4px 14px rgba(0, 0, 0, 0.08);
+  --box-shadow-xl: 0 8px 24px rgba(0, 0, 0, 0.10);
 
   /* Z-Index Scale */
   --z-index-dropdown: 1000;
@@ -87,14 +106,14 @@
 }
 
 [data-theme="dark"] {
-  --primary-color: #007bff;
-  --secondary-color: #6c757d;
-  --accent-color: #17a2b8;
-  --surface-color: #2c3e50;
-  --background-color: #1a202c;
-  --error-color: #dc3545;
-  --success-color: #28a745;
-  --warning-color: #ffc107;
-  --text-color: #f8f9fa;
-  --text-color-muted: #6c757d;
+  --primary-color: #1ABC9C;
+  --secondary-color: #95A5A6;
+  --accent-color: #3498DB;
+  --surface-color: #2C3E50;
+  --background-color: #1A252F;
+  --error-color: #E74C3C;
+  --success-color: #27AE60;
+  --warning-color: #F39C12;
+  --text-color: #ECF0F1;
+  --text-color-muted: #95A5A6;
 }

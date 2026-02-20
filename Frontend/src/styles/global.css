@@ -19,6 +19,37 @@ body {
   background-color: var(--background-color);
 }
 
+/* ============================================
+   CUSTOM SCROLLBAR - Design System
+   ============================================ */
+
+/* Webkit browsers (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background-light);
+  border-radius: var(--border-radius-sm);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-dark);
+  border-radius: var(--border-radius-sm);
+  transition: background var(--transition-base);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-color);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-dark) var(--background-light);
+}
+
 h1,
 h2,
 h3,
@@ -150,26 +181,40 @@ textarea,
   color: var(--text-color);
   background-color: var(--background-light);
   background-clip: padding-box;
-  border: none;
+  border: 1px solid var(--border-color);
   border-radius: var(--border-radius-sm);
-  transition: all var(--transition-slow);
+  transition: all var(--transition-base);
   outline: none;
-  box-shadow: var(--box-shadow-sm);
+  box-shadow: none;
   font-family: var(--font-family-base);
+}
+
+/* Select Dropdown - Custom Styling */
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%237F8C8D' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 12px;
+  padding-right: 40px;
+  cursor: pointer;
 }
 
 input:hover,
 select:hover,
 textarea:hover {
-  background-color: var(--background-hover);
+  border-color: var(--border-dark);
+  background-color: var(--surface-color);
 }
 
 input:focus,
 select:focus,
 textarea:focus {
-  background-color: var(--background-hover);
-  box-shadow: var(--box-shadow-md);
-  transform: translateY(-1px);
+  background-color: var(--surface-color);
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px var(--primary-light);
 }
 
 input::placeholder,

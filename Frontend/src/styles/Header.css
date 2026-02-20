@@ -1,7 +1,7 @@
 .header {
-  height: 70px;
-  background: var(--surface-color);
-  border-bottom: 1px solid var(--border-light);
+  height: 50px;
+  background: transparent;
+  /* border-bottom: 1px solid var(--border-light); */
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -9,8 +9,7 @@
   gap: var(--spacing-md);
   position: sticky;
   top: 0;
-  z-index: var(--z-index-sticky);
-  box-shadow: var(--box-shadow-sm);
+  /* box-shadow: var(--box-shadow-sm); */
 }
 
 .header-menu-toggle {
@@ -34,7 +33,13 @@
 .header span {
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-medium);
-  color: var(--text-color);
+  color: var(--background-light);
+  background-color: var(--primary-color);
+  padding: 10px;
+  border: 1px solid var(--border-light);
+  border-radius: 25px;
+  backdrop-filter: blur(10px);
+  margin-top: 20px;
 }
 
 /* RESPONSIVE HEADER */
@@ -59,4 +64,3 @@
     font-size: var(--font-size-xs);
   }
 }
-

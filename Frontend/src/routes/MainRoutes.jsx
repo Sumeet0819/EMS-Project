@@ -1,13 +1,14 @@
-import React, { useEffect } from "react";
+import React, { useEffect, Suspense, lazy } from "react";
 import { Route, Routes, Navigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { asyncCurrentuser } from "../store/actions/userActions";
-
-// Pages
-import Auth from "../pages/Auth";
-import AdminPage from "../pages/AdminPage";
-import EmployeeDashboard from "../pages/EmployeeDashboard";
 import ProtectedRoute from "../components/ProtectedRoute";
+import Loader from "../components/Loader";
+
+// Lazy load Pages
+const Auth = lazy(() => import("../pages/Auth"));
+const AdminPage = lazy(() => import("../pages/AdminPage"));
+const EmployeeDashboard = lazy(() => import("../pages/EmployeeDashboard"));
 
 const MainRoutes = () => {
   const dispatch = useDispatch();
@@ -18,33 +19,35 @@ const MainRoutes = () => {
   }, [dispatch]);
 
   return (
-    <Routes>
-      {/* Auth Route */}
-      <Route path="/" element={<Auth />} />
+    <Suspense fallback={<Loader />}>
+      <Routes>
+        {/* Auth Route */}
+        <Route path="/" element={<Auth />} />
 
-      {/* Admin Route */}
-      <Route
-        path="/admin/*"
-        element={
-          <ProtectedRoute requiredRole="admin">
-            <AdminPage />
-          </ProtectedRoute>
-        }
-      />
+        {/* Admin Route */}
+        <Route
+          path="/admin/*"
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <AdminPage />
+            </ProtectedRoute>
+          }
+        />
 
-      {/* Employee Route */}
-      <Route
-        path="/employee/*"
-        element={
-          <ProtectedRoute requiredRole="employee">
-            <EmployeeDashboard />
-          </ProtectedRoute>
-        }
-      />
+        {/* Employee Route */}
+        <Route
+          path="/employee/*"
+          element={
+            <ProtectedRoute requiredRole="employee">
+              <EmployeeDashboard />
+            </ProtectedRoute>
+          }
+        />
 
-      {/* Catch all - redirect to home */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        {/* Catch all - redirect to home */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Suspense>
   );
 };
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   asyncLoadEmployeeTasks,
@@ -11,9 +11,11 @@ import { updateTask, deleteTask } from "../store/reducers/employeeTaskSlice";
 import { useSocket } from "../contexts/SocketContext";
 import CreateTask from "./CreateTask";
 import "../styles/TaskPage.css";
-import { RiDeleteBinLine, RiPencilLine, RiEyeLine } from "@remixicon/react";
+import { RiDeleteBinLine, RiPencilLine, RiEyeLine, RiAddLine } from "@remixicon/react";
 import { toast } from "sonner";
 import TaskDetailsModal from "../components/TaskDetailsModal";
+import SearchBar from "../components/common/SearchBar";
+import ViewToggle from "../components/common/ViewToggle";
 
 const TaskPage = () => {
   const dispatch = useDispatch();
@@ -26,6 +28,8 @@ const TaskPage = () => {
   const [selectedTask, setSelectedTask] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [employeeFilter, setEmployeeFilter] = useState("");
+  const [viewMode, setViewMode] = useState('list'); // 'list' or 'grid'
+  const [searchQuery, setSearchQuery] = useState("");
   const [editForm, setEditForm] = useState({
     title: "",
     description: "",
@@ -224,6 +228,35 @@ const TaskPage = () => {
     });
   };
 
+  const filteredTasks = useMemo(() => {
+    return tasks.filter((task) => {
+      // Employee filter
+      if (employeeFilter) {
+        const assignedToId = task.assignedTo?._id || task.assignedTo;
+        if (assignedToId !== employeeFilter) return false;
+      }
+
+      // Search filter
+      if (!searchQuery) return true;
+      const query = searchQuery.toLowerCase();
+      
+      const title = (task.title || "").toLowerCase();
+      const description = (task.description || "").toLowerCase();
+      
+      // Check assignee name if available
+      let assigneeName = "";
+      if (task.assignedTo && typeof task.assignedTo === 'object') {
+         if (task.assignedTo.fullName) {
+            assigneeName = `${task.assignedTo.fullName.firstName || ''} ${task.assignedTo.fullName.lastName || ''}`;
+         } else if (task.assignedTo.email) {
+            assigneeName = task.assignedTo.email;
+         }
+      }
+      
+      return title.includes(query) || description.includes(query) || assigneeName.toLowerCase().includes(query);
+    });
+  }, [tasks, employeeFilter, searchQuery]);
+
   return (
     <div className="task-page-wrapper">
       <div className="task-header-bar">
@@ -232,7 +265,17 @@ const TaskPage = () => {
           <p className="task-subtitle">Manage all tasks and assign work</p>
         </div>
 
-        <div style={{ display: "flex", gap: "var(--spacing-md)", alignItems: "center" }}>
+        <div className="header-actions">
+          <SearchBar 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search tasks..."
+          />
+          <ViewToggle 
+            viewMode={viewMode}
+            setViewMode={setViewMode}
+          />
+          
           <select
             className="employee-filter-select"
             value={employeeFilter}
@@ -254,15 +297,17 @@ const TaskPage = () => {
               </option>
             ))}
           </select>
-        <button
-          className="add-task-btn"
-          onClick={() => setShowCreateModal(true)}
-        >
-          + Create Task
-        </button>
+          
+          <button
+            className="add-task-btn"
+            onClick={() => setShowCreateModal(true)}
+          >
+            + Create Task
+          </button>
         </div>
       </div>
 
+      {viewMode === 'list' ? (
       <div className="tasks-table-container">
         {Array.isArray(tasks) && tasks.length > 0 ? (
           <table className="tasks-table">
@@ -277,13 +322,7 @@ const TaskPage = () => {
               </tr>
             </thead>
             <tbody>
-              {tasks
-                .filter((task) => {
-                  if (!employeeFilter) return true;
-                  const assignedToId = task.assignedTo?._id || task.assignedTo;
-                  return assignedToId?.toString() === employeeFilter;
-                })
-                .map((task) => (
+              {filteredTasks.map((task) => (
                 <tr key={task._id} onClick={() => handleViewDetails(task)}>
                   <td className="task-title-cell">
                     <strong>{task.title}</strong>
@@ -325,9 +364,82 @@ const TaskPage = () => {
             </tbody>
           </table>
         ) : (
-          <p className="no-data">No tasks found</p>
+              <div className="empty-state">
+                <div className="empty-state-icon"><img src="./task.svg" alt="" /></div>
+                <h3>No Tasks Yet</h3>
+                <p>Get started by adding your first task to the team.</p>
+                <button className="empty-state-btn" onClick={() => setShowCreateModal(true)}>
+                  <RiAddLine size={16} />
+                  Add First Task
+                </button>
+              </div>
         )}
       </div>
+      ) : (
+        <div className="tasks-grid-container">
+          {Array.isArray(tasks) && tasks.length > 0 ? (
+            <div className="tasks-grid">
+              {filteredTasks.map((task) => (
+                  <div key={task._id} className="task-grid-card" onClick={() => handleViewDetails(task)}>
+                    <div className="task-card-header">
+                      <span className={`priority-badge ${task.priority}`}>
+                        {task.priority}
+                      </span>
+                      <div className="task-card-actions" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          className="edit-btn-card"
+                          onClick={(e) => handleEditClick(task, e)}
+                          title="Edit Task"
+                        >
+                          <span style={{ color: "var(--primary-color)" }}><RiPencilLine size={16} /></span>
+                        </button>
+                        <button
+                          className="delete-btn-card"
+                          onClick={(e) => handleDeleteClick(task, e)}
+                          title="Delete Task"
+                        >
+                          <span style={{ color: "var(--primary-color)" }}><RiDeleteBinLine size={16} /></span>
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <div className="task-card-body">
+                      <h3 className="task-card-title">{task.title}</h3>
+                      <p className="task-card-description">
+                        {truncateText(task.description, 80)}
+                      </p>
+                      
+                      <div className="task-card-meta">
+                        <div className="task-card-assignee">
+                          <span className="meta-label">Assigned to:</span>
+                          <span className="meta-value">
+                            {task.assignedTo?.fullName
+                              ? `${task.assignedTo.fullName.firstName} ${task.assignedTo.fullName.lastName}`
+                              : task.assignedTo?.email || "Unassigned"}
+                          </span>
+                        </div>
+                        
+                        <span className={`status-badge ${task.status}`}>
+                          {task.status.replace("-", " ")}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          ) : (
+            <div className="empty-state">
+              <div className="empty-state-icon"><img src="./task.svg" alt="" /></div>
+              <h3>No Tasks Yet</h3>
+              <p>Get started by adding your first task to the team.</p>
+              <button className="empty-state-btn" onClick={() => setShowCreateModal(true)}>
+                <RiAddLine size={16} />
+                Add First Task
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {showCreateModal && (
         <CreateTask

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   asyncLoadTasksByEmployee,
@@ -9,11 +9,12 @@ import {
 import { deleteTask, updateTask } from "../store/reducers/employeeTaskSlice";
 import { asyncLogoutuser } from "../store/actions/userActions";
 import { useNavigate } from "react-router-dom";
-import Loader from "../components/Loader";
-import { RiTimeLine, RiTaskLine, RiLogoutBoxLine, RiUserLine, RiMenuLine, RiCloseLine, RiFilter3Line, RiMenuFoldLine, RiMenuUnfoldLine, RiSearchLine } from "@remixicon/react";
+import { RiTimeLine, RiTaskLine, RiLogoutBoxLine, RiUserLine, RiMenuLine, RiCloseLine, RiFilter3Line, RiMenuFoldLine, RiMenuUnfoldLine, RiSearchLine, RiEyeLine } from "@remixicon/react";
 import { toast } from "sonner";
 import { useSocket } from "../contexts/SocketContext";
 import "../styles/EmployeeDashboard.css";
+import TaskDetailsModal from "../components/TaskDetailsModal";
+import SearchBar from "../components/common/SearchBar";
 
 const EmployeeDashboard = () => {
   const dispatch = useDispatch();
@@ -26,6 +27,8 @@ const EmployeeDashboard = () => {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showRemarkModal, setShowRemarkModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [selectedTask, setSelectedTask] = useState(null);
   const [taskToSubmit, setTaskToSubmit] = useState(null);
   const [remarkText, setRemarkText] = useState("");
   const [filterDate, setFilterDate] = useState(null); // Date to filter tasks by
@@ -376,6 +379,16 @@ const EmployeeDashboard = () => {
     ? `${user.fullName.firstName} ${user.fullName.lastName}`
     : user?.email || "Employee";
 
+  const handleViewTaskDetails = (task) => {
+    setSelectedTask(task);
+    setShowDetailsModal(true);
+  };
+
+  const handleCloseDetailsModal = () => {
+    setShowDetailsModal(false);
+    setSelectedTask(null);
+  };
+
   return (
     <div className="emp-main-wrapper">
       {/* MOBILE MENU TOGGLE */}
@@ -470,16 +483,12 @@ const EmployeeDashboard = () => {
 
         {/* Search and Filters */}
         <div className="search-filter-bar">
-          <div className="search-box">
-            <RiSearchLine className="search-icon" size={20} />
-            <input
-              type="text"
-              className="search-input"
-              placeholder="Search tasks..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
+          <SearchBar
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search tasks..."
+            width="80%"
+          />
           
           <button 
             className="filter-toggle-btn" 
@@ -644,7 +653,12 @@ const EmployeeDashboard = () => {
                   </thead>
                   <tbody>
                     {displayTasks.map((task) => (
-                      <tr key={task._id} className={`task-row ${task.status}`}>
+                      <tr 
+                        key={task._id} 
+                        className={`task-row ${task.status}`}
+                        onClick={() => handleViewTaskDetails(task)}
+                        style={{ cursor: 'pointer' }}
+                      >
                         <td className="task-info-cell">
                           <div className="task-info">
                             <strong className="task-name">{task.title || "Untitled Task"}</strong>
@@ -704,7 +718,10 @@ const EmployeeDashboard = () => {
                             {(task.status || "pending") === "pending" && (
                               <button
                                 className="action-btn start-btn"
-                                onClick={() => startTask(task._id)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  startTask(task._id);
+                                }}
                               >
                                 Start
                               </button>
@@ -712,7 +729,10 @@ const EmployeeDashboard = () => {
                             {(task.status || "pending") === "in-progress" && (
                               <button
                                 className="action-btn submit-btn"
-                                onClick={() => submitTask(task._id)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  submitTask(task._id);
+                                }}
                               >
                                 Submit
                               </button>
@@ -838,6 +858,11 @@ const EmployeeDashboard = () => {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Task Details Modal */}
+        {showDetailsModal && selectedTask && (
+          <TaskDetailsModal task={selectedTask} onClose={handleCloseDetailsModal} />
         )}
       </div>
     </div>

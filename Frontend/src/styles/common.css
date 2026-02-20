@@ -1,0 +1,90 @@
+/* Shared Common Components Styles */
+
+/* ============================================
+   SEARCH BAR
+   ============================================ */
+.search-container {
+    display: flex;
+    align-items: center;
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-md);
+    padding: 8px 12px;
+    gap: 8px;
+    min-width: 380px;
+    height: 50px;
+    transition: border-color var(--transition-base);
+}
+
+.search-container:focus-within {
+    outline: none;
+    box-shadow: none;
+    border-color: var(--border-color);
+}
+
+.search-container .search-icon {
+    color: var(--text-color-muted);
+    flex-shrink: 0;
+}
+
+.search-container input {
+    border: none !important;
+    background: transparent !important;
+    outline: none !important;
+    box-shadow: none !important;
+    width: 100%;
+    font-size: var(--font-size-sm);
+    color: var(--text-color);
+    margin: 0;
+}
+
+.search-container input:focus {
+    outline: none !important;
+    box-shadow: none !important;
+    border: none !important;
+}
+
+.search-container input::placeholder {
+    color: var(--text-color-muted);
+    opacity: 0.8;
+}
+
+/* ============================================
+   VIEW TOGGLE
+   ============================================ */
+.view-toggle {
+    display: flex;
+    gap: 4px;
+    background: var(--background-light);
+    border-radius: var(--border-radius-sm);
+    padding: 4px;
+    border: 1px solid var(--border-color);
+    height: 40px;
+    /* Consistent height matching buttons */
+    align-items: center;
+}
+
+.view-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 10px;
+    background: transparent;
+    border: none;
+    border-radius: var(--border-radius-sm);
+    color: var(--text-color-muted);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    height: 100%;
+}
+
+.view-btn:hover {
+    background: var(--surface-color);
+    color: var(--text-color);
+}
+
+.view-btn.active {
+    background: var(--primary-color);
+    color: white;
+    box-shadow: var(--box-shadow-sm);
+}

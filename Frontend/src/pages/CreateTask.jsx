@@ -65,7 +65,7 @@ const CreateTask = ({ onCancel, onSubmit, employees: passedEmployees, preSelecte
 
   return (
     <div className="modal-overlay">
-      <div className="modal-box">
+      <div className="task-box">
         <div className="modal-header">
           <h2>Create New Task</h2>
           <button className="close-btn" onClick={onCancel}>×</button>
