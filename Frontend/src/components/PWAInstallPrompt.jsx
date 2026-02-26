@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import '../styles/pwa-install.css';
+import { Card, CardContent } from './ui/card';
+import { Button } from './ui/button';
+import { RiDownloadCloud2Line, RiCloseLine } from '@remixicon/react';
 
 const PWAInstallPrompt = () => {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
@@ -47,26 +49,27 @@ const PWAInstallPrompt = () => {
   if (!showInstallPrompt) return null;
 
   return (
-    <div className="pwa-install-banner">
-      <div className="pwa-install-content">
-        <div className="pwa-install-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-          </svg>
-        </div>
-        <div className="pwa-install-text">
-          <h3>Install EMS App</h3>
-          <p>Install this app on your device for quick and easy access</p>
-        </div>
-        <div className="pwa-install-actions">
-          <button className="pwa-install-btn" onClick={handleInstallClick}>
-            Install
-          </button>
-          <button className="pwa-dismiss-btn" onClick={handleDismiss}>
-            ✕
-          </button>
-        </div>
-      </div>
+    <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 z-50 animate-in slide-in-from-bottom-5">
+      <Card className="shadow-lg border-primary/20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <CardContent className="p-4 flex flex-col sm:flex-row items-center gap-4 max-w-sm w-full">
+          <div className="bg-primary/10 p-3 rounded-full shrink-0">
+            <RiDownloadCloud2Line className="w-6 h-6 text-primary" />
+          </div>
+          <div className="flex-1 text-center sm:text-left space-y-1">
+            <h3 className="font-semibold leading-none">Install EMS App</h3>
+            <p className="text-sm text-muted-foreground">Add to home screen for quick access.</p>
+          </div>
+          <div className="flex items-center gap-2 mt-4 sm:mt-0 w-full sm:w-auto">
+            <Button onClick={handleInstallClick} className="flex-1 sm:flex-none">
+              Install
+            </Button>
+            <Button variant="ghost" size="icon" onClick={handleDismiss} className="shrink-0">
+              <RiCloseLine className="w-5 h-5 text-muted-foreground hover:text-foreground" />
+              <span className="sr-only">Dismiss</span>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { asyncLoadEmployees } from "../store/actions/employeeActions";
-import "../styles/CreateTask.css";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "../components/ui/dialog";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
+import { Button } from "../components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
+import { Textarea } from "../components/ui/textarea";
 
 const CreateTask = ({ onCancel, onSubmit, employees: passedEmployees, preSelectedEmployee }) => {
   const dispatch = useDispatch();
@@ -15,14 +20,12 @@ const CreateTask = ({ onCancel, onSubmit, employees: passedEmployees, preSelecte
     isDaily: false,
   });
 
-  // Load employees on mount if not passed as prop
   useEffect(() => {
     if (!passedEmployees || passedEmployees.length === 0) {
       dispatch(asyncLoadEmployees());
     }
   }, [dispatch, passedEmployees]);
 
-  // Update assignedTo when preSelectedEmployee changes
   useEffect(() => {
     if (preSelectedEmployee) {
       setForm(prev => ({ ...prev, assignedTo: preSelectedEmployee }));
@@ -35,13 +38,15 @@ const CreateTask = ({ onCancel, onSubmit, employees: passedEmployees, preSelecte
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  const handleSelectChange = (name, value) => {
+    setForm({ ...form, [name]: value });
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Find employee name by ID
     const selectedEmployee = employees.find((e) => e._id === form.assignedTo || e.id === form.assignedTo);
 
-    // Return form to parent
     onSubmit({
       title: form.title,
       description: form.description,
@@ -52,7 +57,6 @@ const CreateTask = ({ onCancel, onSubmit, employees: passedEmployees, preSelecte
       isDaily: form.isDaily,
     });
 
-    // Reset form
     setForm({
       title: "",
       description: "",
@@ -64,106 +68,124 @@ const CreateTask = ({ onCancel, onSubmit, employees: passedEmployees, preSelecte
   };
 
   return (
-    <div className="modal-overlay">
-      <div className="task-box">
-        <div className="modal-header">
-          <h2>Create New Task</h2>
-          <button className="close-btn" onClick={onCancel}>×</button>
-        </div>
+    <Dialog open onOpenChange={(isOpen) => !isOpen && onCancel()}>
+      <DialogContent className="sm:max-w-[425px]">
+        <form onSubmit={handleSubmit}>
+          <DialogHeader>
+            <DialogTitle>Create New Task</DialogTitle>
+            <DialogDescription>
+              Fill in the task details and assign it to an employee.
+            </DialogDescription>
+          </DialogHeader>
 
-        <p className="sub-text">Fill in the task details and assign it to an employee.</p>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="title" className="text-right">Title</Label>
+              <Input
+                id="title"
+                name="title"
+                required
+                onChange={handleChange}
+                value={form.title}
+                className="col-span-3"
+              />
+            </div>
 
-        <form className="task-form" onSubmit={handleSubmit}>
-          <div className="form-group full">
-            <label>Task Title</label>
-            <input
-              type="text"
-              name="title"
-              required
-              onChange={handleChange}
-              value={form.title}
-              placeholder="Enter task title"
-            />
-          </div>
+            <div className="grid grid-cols-4 items-start gap-4">
+              <Label htmlFor="description" className="text-right mt-2">Description</Label>
+              <Textarea
+                id="description"
+                name="description"
+                onChange={handleChange}
+                value={form.description}
+                className="col-span-3 h-24"
+              />
+            </div>
 
-          <div className="form-group full">
-            <label>Description</label>
-            <textarea
-              name="description"
-              onChange={handleChange}
-              value={form.description}
-              placeholder="Enter task description"
-            ></textarea>
-          </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="assignedTo" className="text-right">Assign To</Label>
+              <Select
+                name="assignedTo"
+                value={form.assignedTo}
+                onValueChange={(val) => handleSelectChange("assignedTo", val)}
+                disabled={loading || employees.length === 0}
+                required
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder={loading ? "Loading..." : "Select employee"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {employees.map((emp) => (
+                    <SelectItem key={emp._id || emp.id} value={emp._id || emp.id}>
+                      {emp.fullName?.firstName || emp.firstName} {emp.fullName?.lastName || emp.lastName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div className="form-group">
-            <label>Assign To</label>
-            <select 
-              name="assignedTo" 
-              required 
-              onChange={handleChange} 
-              value={form.assignedTo}
-              disabled={loading || employees.length === 0}
-            >
-              <option value="">
-                {loading ? "Loading employees..." : "Select employee"}
-              </option>
-              {employees.map((emp) => (
-                <option key={emp._id || emp.id} value={emp._id || emp.id}>
-                  {emp.fullName?.firstName || emp.firstName} {emp.fullName?.lastName || emp.lastName}
-                </option>
-              ))}
-            </select>
-          </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="priority" className="text-right">Priority</Label>
+              <Select
+                name="priority"
+                value={form.priority}
+                onValueChange={(val) => handleSelectChange("priority", val)}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="low">Low</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div className="form-group">
-            <label>Priority</label>
-            <select name="priority" onChange={handleChange} value={form.priority}>
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
-            </select>
-          </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="status" className="text-right">Status</Label>
+              <Select
+                name="status"
+                value={form.status}
+                onValueChange={(val) => handleSelectChange("status", val)}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="in-progress">In Progress</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div className="form-group">
-            <label>Status</label>
-            <select name="status" onChange={handleChange} value={form.status}>
-              <option value="pending">Pending</option>
-              <option value="in-progress">In Progress</option>
-              <option value="completed">Completed</option>
-            </select>
-          </div>
-
-          <div className="form-group full">
-            <label style={{ display: "flex", alignItems: "center", gap: "var(--spacing-sm)", cursor: "pointer" }}>
+            <div className="flex items-center space-x-2 pt-2 ml-[88px]">
               <input
                 type="checkbox"
+                id="isDaily"
                 name="isDaily"
                 checked={form.isDaily}
                 onChange={(e) => setForm({ ...form, isDaily: e.target.checked })}
-                style={{ width: "auto", cursor: "pointer" }}
+                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
               />
-              <span>Mark as Daily Task (recurring)</span>
-            </label>
+              <Label htmlFor="isDaily" className="font-normal cursor-pointer">
+                Mark as Daily Task (recurring)
+              </Label>
+            </div>
           </div>
 
-          <div className="task-btn-row full">
-            <button type="button" className="cancel-btn" onClick={onCancel}>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onCancel}>
               Cancel
-            </button>
-            <button type="submit" className="primary-btn" disabled={loading || employees.length === 0}>
-              {loading ? (
-                <span className="button-loader">
-                  <span className="spinner"></span> Creating...
-                </span>
-              ) : (
-                "Create Task"
-              )}
-            </button>
-          </div>
+            </Button>
+            <Button type="submit" disabled={loading || employees.length === 0}>
+              Create Task
+            </Button>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 

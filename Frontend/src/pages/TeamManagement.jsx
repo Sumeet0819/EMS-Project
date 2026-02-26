@@ -1,10 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  RiAddLine, RiPencilLine, RiDeleteBinLine, RiCloseLine
-} from "@remixicon/react";
-import SearchBar from "../components/common/SearchBar";
-import ViewToggle from "../components/common/ViewToggle";
+import { RiAddLine, RiPencilLine, RiDeleteBinLine, RiGroupLine } from "@remixicon/react";
 import {
   asyncLoadEmployees,
   asyncDeleteEmployee,
@@ -12,69 +8,49 @@ import {
 } from "../store/actions/employeeActions";
 import CreateEmployee from "../components/CreateEmployee";
 import EmployeeCard from "../components/EmployeeCard";
-import "../styles/TeamManagement.css";
-import "../styles/EmployeeCard.css";
-import {toast ,Toaster } from "sonner"
+import SearchBar from "../components/common/SearchBar";
+import ViewToggle from "../components/common/ViewToggle";
+import PageHeader from "../components/common/PageHeader";
+import EmptyState from "../components/common/EmptyState";
+import ConfirmDialog from "../components/common/ConfirmDialog";
+import { Badge } from "../components/ui/badge";
+import { Button } from "../components/ui/button";
+import { Card } from "../components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "../components/ui/dialog";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
+import { toast } from "sonner";
+import UserAvatar from "../components/common/UserAvatar";
 
 const TeamManagement = () => {
   const dispatch = useDispatch();
-  const { employees, loading } = useSelector((state) => state.employeeReducer);
+  const { employees } = useSelector((state) => state.employeeReducer);
   const [isCreateEmployee, setCreateEmployee] = useState(false);
   const [isEditModalOpen, setEditModalOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
-  const [viewMode, setViewMode] = useState('list'); // 'list' or 'grid'
+  
+  const [employeeToDelete, setEmployeeToDelete] = useState(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
+  const [viewMode, setViewMode] = useState('list');
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Load employees on mount
   useEffect(() => {
     dispatch(asyncLoadEmployees());
   }, [dispatch]);
 
-  const handleCreateEmployee = () => {
-    setCreateEmployee(true);
-  };
-
-const handleDeleteEmployee = (id) => {
-  toast.custom((t) => (
-    <div className="confirm-toast">
-      <p>Are you sure you want to delete this employee?</p>
-
-      <div className="confirm-actions">
-        <button
-          className="confirm-yes"
-          onClick={() => {
-            toast.dismiss(t);
-
-            dispatch(asyncDeleteEmployee(id)).then(() => {
-              dispatch(asyncLoadEmployees());
-              toast.success("Employee deleted");
-            });
-          }}
-        >
-          Yes
-        </button>
-
-        <button
-          className="confirm-no"
-          onClick={() => toast.dismiss(t)}
-        >
-          No
-        </button>
-      </div>
-    </div>
-  ));
-};
-
-  const handleEdit = (employee) => {
-    setSelectedEmployee(employee);
-    setEditModalOpen(true);
-  };
-
-  const handleCreateClose = () => {
-    setCreateEmployee(false);
-    // Reload employees after creation
-    dispatch(asyncLoadEmployees());
-  
+  const confirmDelete = async () => {
+    try {
+      await dispatch(asyncDeleteEmployee(employeeToDelete._id || employeeToDelete.id));
+      dispatch(asyncLoadEmployees());
+      toast.success("Employee deleted successfully");
+      setIsDeleteDialogOpen(false);
+      setEmployeeToDelete(null);
+    } catch (error) {
+      toast.error("Failed to delete employee");
+    }
   };
 
   const handleUpdateEmployee = (e) => {
@@ -90,7 +66,7 @@ const handleDeleteEmployee = (id) => {
     };
     dispatch(asyncUpdateEmployee(updatedEmployee));
     setEditModalOpen(false);
-      toast.success("Employee Details Updated Successfully")
+    toast.success("Employee Details Updated Successfully");
   };
 
   const filteredEmployees = useMemo(() => {
@@ -105,211 +81,161 @@ const handleDeleteEmployee = (id) => {
   }, [employees, searchQuery]);
 
   return (
-    <div className="team-layout">
-      <div className="team-container">
-        <div className="team-header">
-          <div>
-            <h1>Team Management</h1>
-            <p>Manage your employees and their roles</p>
-          </div>
-          <div className="header-actions">
-            <SearchBar 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search employees..."
-            />
-            <ViewToggle 
-              viewMode={viewMode}
-              setViewMode={setViewMode}
-            />
-            <button className="add-employee-btn" onClick={handleCreateEmployee}>
-              <span className="icon-btn">
-                <RiAddLine size={16} />
-              </span>
-              Add Employee
-            </button>
-          </div>
-        </div>
+    <div className="space-y-6 animate-fade-in">
+      <PageHeader 
+        title="Team Management"
+        subtitle="Manage your employees and their roles"
+        actions={
+          <Button onClick={() => setCreateEmployee(true)}>
+            <RiAddLine className="mr-2 h-4 w-4" /> Add Employee
+          </Button>
+        }
+      />
 
-        <div className="team-table-card">
-          <h2 data-count={filteredEmployees.length > 0 ? `${filteredEmployees.length} ${filteredEmployees.length === 1 ? 'Employee' : 'Employees'}` : ''}>
-            All Employees
-          </h2>
-          
-          {viewMode === 'list' ? (
-            <div className="employees-table-container">
-              {filteredEmployees.length > 0 ? (
-                <table className="employees-table">
-                  <thead>
-                    <tr>
-                      <th>Name</th>
-                      <th>Email</th>
-                      <th>Role</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredEmployees.map((emp) => (
-                      <tr key={emp._id || emp.id}>
-                        <td className="employee-name-cell">
-                          <strong>
-                            {emp.fullName?.firstName || emp.firstName} {emp.fullName?.lastName || emp.lastName}
-                          </strong>
-                        </td>
-                        <td className="employee-email-cell">{emp.email}</td>
-                        <td>
-                          <span className={`role-badge ${emp.role}`}>
-                            {emp.role}
-                          </span>
-                        </td>
-                        <td className="employee-actions-cell">
-                          <div className="employee-actions">
-                            <button
-                              className="edit-btn"
-                              onClick={() => handleEdit(emp)}
-                              title="Edit Employee"
-                            >
-                              <RiPencilLine size={18} />
-                            </button>
-                            <button
-                              className="delete-btn"
-                              onClick={() => handleDeleteEmployee(emp._id || emp.id)}
-                              title="Delete Employee"
-                            >
-                              <RiDeleteBinLine size={18} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ) : (
-                <div className="empty-state">
-                  <div className="empty-state-icon"><img src="./emp.svg" alt="" /></div>
-                  <h3>No Employees Yet</h3>
-                  <p>Get started by adding your first employee to the team.</p>
-                  <button className="empty-state-btn" onClick={handleCreateEmployee}>
-                    <RiAddLine size={16} />
-                    Add First Employee
-                  </button>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="employees-grid-container">
-              {filteredEmployees.length > 0 ? (
-                <div className="employees-grid">
-                  {filteredEmployees.map((emp) => (
-                    <div key={emp._id || emp.id} className="employee-grid-card">
-                      <div className="employee-card-header">
-                        <div className="employee-avatar">
-                          {(emp.fullName?.firstName?.[0] || emp.firstName?.[0] || 'E').toUpperCase()}
-                        </div>
-                        <div className="employee-card-actions">
-                          <button
-                            className="edit-btn-card"
-                            onClick={() => handleEdit(emp)}
-                            title="Edit Employee"
-                          >
-                            <span style={{ color: "var(--primary-color)" }}><RiPencilLine size={16} /></span>
-                          </button>
-                          <button
-                            className="delete-btn-card"
-                            onClick={() => handleDeleteEmployee(emp._id || emp.id)}
-                            title="Delete Employee"
-                          >
-                            <span style={{ color: "var(--primary-color)" }}><RiDeleteBinLine size={16} /></span>
-                          </button>
-                        </div>
-                      </div>
-                      <div className="employee-card-body">
-                        <h3 className="employee-card-name">
-                          {emp.fullName?.firstName || emp.firstName} {emp.fullName?.lastName || emp.lastName}
-                        </h3>
-                        <p className="employee-card-email">{emp.email}</p>
-                        <span className={`role-badge ${emp.role}`}>
-                          {emp.role}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="empty-state">
-                  <div className="empty-state-icon"><img src="./emp.svg" alt="" /></div>
-                  <h3>No Employees Yet</h3>
-                  <p>Get started by adding your first employee to the team.</p>
-                  <button className="empty-state-btn" onClick={handleCreateEmployee}>
-                    <RiAddLine size={16} />
-                    Add First Employee
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+      <div className="flex flex-col sm:flex-row gap-3 items-center bg-card p-2 rounded-lg border border-border">
+        <SearchBar 
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search by name or email..."
+        />
+        <ViewToggle viewMode={viewMode} setViewMode={setViewMode} />
       </div>
-      {isCreateEmployee && (
-        <CreateEmployee onClose={handleCreateClose} />
-      )}
-      {isEditModalOpen && selectedEmployee && (
-        <div className="modal-overlay">
-          <div className="modal-box">
-            <div className="modal-header">
-              <h2>Edit Employee</h2>
-              <button
-                className="close-btn"
-                onClick={() => setEditModalOpen(false)}
-              >
-                <RiCloseLine size={24} />
-              </button>
-            </div>
-            <form onSubmit={handleUpdateEmployee}>
-              <div className="form-group">
-                <label>First Name</label>
-                <input
-                  type="text"
-                  name="firstName"
-                  defaultValue={selectedEmployee.fullName.firstName}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>Last Name</label>
-                <input
-                  type="text"
-                  name="lastName"
-                  defaultValue={selectedEmployee.fullName.lastName}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>Email</label>
-                <input
-                  type="email"
-                  name="email"
-                  defaultValue={selectedEmployee.email}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>Role</label>
-                <select name="role" defaultValue={selectedEmployee.role} required>
-                  <option value="employee">Employee</option>
-                  <option value="admin">Admin</option>
-                </select>
-              </div>
-              <div className="form-actions row">
-                <button type="button" className="cancel-btn" onClick={() => setEditModalOpen(false)}>
-                  Cancel
-                </button>
-                <button type="submit" className="primary-btn">Update</button>
-              </div>
-            </form>
-          </div>
+
+      {filteredEmployees.length === 0 ? (
+        <EmptyState 
+          icon={<RiGroupLine size={24} />}
+          title="No Employees Found"
+          description={employees.length === 0 ? "Get started by adding your first employee to the team." : "No employees match your search."}
+          action={
+            employees.length === 0 && (
+              <Button onClick={() => setCreateEmployee(true)}>
+                <RiAddLine className="mr-2 h-4 w-4" /> Add First Employee
+              </Button>
+            )
+          }
+        />
+      ) : viewMode === 'list' ? (
+        <Card className="overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Employee</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Role</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredEmployees.map((emp) => (
+                <TableRow key={emp._id || emp.id}>
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <UserAvatar 
+                        firstName={emp.fullName?.firstName || emp.firstName} 
+                        lastName={emp.fullName?.lastName || emp.lastName} 
+                        size="sm"
+                      />
+                      <span className="font-medium">
+                        {emp.fullName?.firstName || emp.firstName} {emp.fullName?.lastName || emp.lastName}
+                      </span>
+                    </div>
+                  </TableCell>
+                  <TableCell>{emp.email}</TableCell>
+                  <TableCell>
+                    <Badge variant={emp.role === "admin" ? "default" : "secondary"}>
+                      {emp.role}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button 
+                      variant="ghost" size="icon" 
+                      onClick={() => { setSelectedEmployee(emp); setEditModalOpen(true); }}
+                    >
+                      <RiPencilLine size={16} />
+                    </Button>
+                    <Button 
+                      variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10"
+                      onClick={() => { setEmployeeToDelete(emp); setIsDeleteDialogOpen(true); }}
+                    >
+                      <RiDeleteBinLine size={16} />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {filteredEmployees.map((emp) => (
+            <EmployeeCard 
+              key={emp._id || emp.id} 
+              employee={{...emp, _id: emp._id || emp.id}}
+              onEdit={(e) => { setSelectedEmployee(e); setEditModalOpen(true); }}
+              onDelete={() => { setEmployeeToDelete(emp); setIsDeleteDialogOpen(true); }}
+            />
+          ))}
         </div>
       )}
+
+      {isCreateEmployee && (
+        <CreateEmployee onClose={() => { setCreateEmployee(false); dispatch(asyncLoadEmployees()); }} />
+      )}
+
+      {/* Edit Modal */}
+      <Dialog open={isEditModalOpen} onOpenChange={setEditModalOpen}>
+        <DialogContent>
+          {selectedEmployee && (
+            <form onSubmit={handleUpdateEmployee}>
+              <DialogHeader>
+                <DialogTitle>Edit Employee</DialogTitle>
+                <DialogDescription>Update the employee's details.</DialogDescription>
+              </DialogHeader>
+              
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="firstName" className="text-right">First Name</Label>
+                  <Input id="firstName" name="firstName" defaultValue={selectedEmployee.fullName?.firstName || selectedEmployee.firstName} required className="col-span-3" />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="lastName" className="text-right">Last Name</Label>
+                  <Input id="lastName" name="lastName" defaultValue={selectedEmployee.fullName?.lastName || selectedEmployee.lastName} required className="col-span-3" />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="email" className="text-right">Email</Label>
+                  <Input id="email" name="email" type="email" defaultValue={selectedEmployee.email} required className="col-span-3" />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="role" className="text-right">Role</Label>
+                  <div className="col-span-3">
+                    <Select name="role" defaultValue={selectedEmployee.role} required>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="employee">Employee</SelectItem>
+                        <SelectItem value="admin">Admin</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setEditModalOpen(false)}>Cancel</Button>
+                <Button type="submit">Update</Button>
+              </DialogFooter>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <ConfirmDialog 
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        title="Delete Employee"
+        description={<>Are you sure you want to delete <strong>{employeeToDelete?.fullName?.firstName || employeeToDelete?.firstName}</strong>? This will remove their access to the system.</>}
+        onConfirm={confirmDelete}
+        onCancel={() => setIsDeleteDialogOpen(false)}
+      />
     </div>
   );
 };

@@ -1,143 +1,102 @@
-import { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   asyncLoadTasksByEmployee,
   asyncStartTask,
   asyncSubmitTask,
   updateTaskTimerLocal,
+  asyncUpdateEmployeeTask,
 } from "../store/actions/employeeTaskActions";
 import { deleteTask, updateTask } from "../store/reducers/employeeTaskSlice";
-import { asyncLogoutuser } from "../store/actions/userActions";
-import { useNavigate } from "react-router-dom";
-import { RiTimeLine, RiTaskLine, RiLogoutBoxLine, RiUserLine, RiMenuLine, RiCloseLine, RiFilter3Line, RiMenuFoldLine, RiMenuUnfoldLine, RiSearchLine, RiEyeLine } from "@remixicon/react";
-import { toast } from "sonner";
 import { useSocket } from "../contexts/SocketContext";
-import "../styles/EmployeeDashboard.css";
-import TaskDetailsModal from "../components/TaskDetailsModal";
+import TaskEditor from "../components/common/TaskEditor";
 import SearchBar from "../components/common/SearchBar";
+import AppSidebar from "../components/layout/AppSidebar";
+import AppHeader from "../components/layout/AppHeader";
+import PriorityBadge from "../components/common/PriorityBadge";
+import StatusBadge from "../components/common/StatusBadge";
+import PageHeader from "../components/common/PageHeader";
+import EmptyState from "../components/common/EmptyState";
+import { Button } from "../components/ui/button";
+import { Card } from "../components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "../components/ui/dialog";
+import { Textarea } from "../components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
+import { RiTimeLine, RiTaskLine } from "@remixicon/react";
+import { toast } from "sonner";
+import { Badge } from "../components/ui/badge";
 
 const EmployeeDashboard = () => {
   const dispatch = useDispatch();
-  const navigate = useNavigate();
-  const { tasks, loading } = useSelector((state) => state.employeeTaskReducer);
+  const { tasks } = useSelector((state) => state.employeeTaskReducer);
   const { user } = useSelector((state) => state.userReducer);
-  const [currentTime, setCurrentTime] = useState(new Date());
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isSidebarVisible, setIsSidebarVisible] = useState(true);
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(new Date());
+
+  // Layout states
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+  const [activeTaskView, setActiveTaskView] = useState('daily');
+  
+  // Filter states
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [priorityFilter, setPriorityFilter] = useState('all');
+  
+  // Logic states
   const [showRemarkModal, setShowRemarkModal] = useState(false);
-  const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [selectedTask, setSelectedTask] = useState(null);
   const [taskToSubmit, setTaskToSubmit] = useState(null);
   const [remarkText, setRemarkText] = useState("");
-  const [filterDate, setFilterDate] = useState(null); // Date to filter tasks by
-  const [activeTaskView, setActiveTaskView] = useState('daily'); // 'daily' or 'regular'
-  
-  // Search and filter states
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState(['all']);
-  const [priorityFilter, setPriorityFilter] = useState(['all']);
-  const [dateFilter, setDateFilter] = useState(['all']);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [selectedTask, setSelectedTask] = useState(null);
+
   const socket = useSocket();
 
-  // Load tasks assigned to the current employee on mount
   useEffect(() => {
-    if (user && user.id) {
-      dispatch(asyncLoadTasksByEmployee(user.id));
-    }
+    if (user?.id) dispatch(asyncLoadTasksByEmployee(user.id));
   }, [dispatch, user]);
 
-  // Listen for task assignment notifications via socket.io
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 1024;
+      setIsMobile(mobile);
+      if (mobile) setSidebarOpen(false);
+      else setSidebarOpen(true);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Socket logic
   useEffect(() => {
     if (!socket || !user?.id) return;
-
-    const handleTaskAssigned = (data) => {
-      const { task, message } = data;
-      
-      // Check if the task is assigned to the current user
+    const handleTaskEvent = (data, isDelete=false) => {
+      const { task, taskId, message, taskTitle } = data;
+      if (isDelete) {
+        toast.info(message||"Task deleted", { description: taskTitle });
+        dispatch(deleteTask(taskId));
+        return;
+      }
       const assignedToId = task?.assignedTo?._id || task?.assignedTo;
       if (assignedToId && assignedToId.toString() === user.id.toString()) {
-        // Show notification using sonner
-        toast.success(message || "New task assigned!", {
-          description: task.title || "You have been assigned a new task",
-          duration: 5000,
-          action: {
-            label: "View",
-            onClick: () => {
-              // Reload tasks to show the new task
-              dispatch(asyncLoadTasksByEmployee(user.id));
-            }
-          }
-        });
-
-        // Reload tasks to include the newly assigned task
-        dispatch(asyncLoadTasksByEmployee(user.id));
+        toast.success(message || `Task ${data.type || 'updated'}!`, { description: task.title });
+        dispatch(data.type === 'assigned' ? asyncLoadTasksByEmployee(user.id) : updateTask(task));
       }
     };
 
-    const handleTaskDeleted = (data) => {
-      const { taskId, taskTitle, message } = data;
-      
-      // Show notification using sonner
-      toast.info(message || "Task deleted", {
-        description: taskTitle || "A task assigned to you has been deleted",
-        duration: 4000,
-      });
+    socket.on('taskAssigned', d => handleTaskEvent({...d, type: 'assigned'}));
+    socket.on('taskDeleted', d => handleTaskEvent(d, true));
+    socket.on('taskUpdated', d => handleTaskEvent(d));
 
-      // Remove the task from the list using the deleteTask action
-      dispatch(deleteTask(taskId));
-    };
-
-    const handleTaskUpdated = (data) => {
-      const { task, message } = data;
-      
-      // Check if the task is assigned to the current user
-      const assignedToId = task?.assignedTo?._id || task?.assignedTo;
-      if (assignedToId && assignedToId.toString() === user.id.toString()) {
-        // Show notification using sonner
-        toast.success(message || "Task updated!", {
-          description: task.title || "A task assigned to you has been updated",
-          duration: 4000,
-        });
-
-        // Update the task in the list using the updateTask action
-        dispatch(updateTask(task));
-      }
-    };
-
-    // Listen for task assignment events
-    socket.on('taskAssigned', handleTaskAssigned);
-    // Listen for task deletion events
-    socket.on('taskDeleted', handleTaskDeleted);
-    // Listen for task update events
-    socket.on('taskUpdated', handleTaskUpdated);
-
-    // Cleanup listeners on unmount
     return () => {
-      socket.off('taskAssigned', handleTaskAssigned);
-      socket.off('taskDeleted', handleTaskDeleted);
-      socket.off('taskUpdated', handleTaskUpdated);
+      socket.off('taskAssigned'); socket.off('taskDeleted'); socket.off('taskUpdated');
     };
   }, [socket, user, dispatch]);
 
-  // Update clock every second
-  useEffect(() => {
-    const clockInterval = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-    return () => clearInterval(clockInterval);
-  }, []);
-
-  // TIMER ENGINE - Calculate elapsed time for in-progress tasks
   useEffect(() => {
     const interval = setInterval(() => {
       tasks.forEach((t) => {
         if (t.status === "in-progress" && t.startTime) {
-          const startTime = new Date(t.startTime).getTime();
-          const now = Date.now();
-          const elapsedMs = now - startTime;
-          const elapsedSec = Math.max(0, Math.floor(elapsedMs / 1000));
+          const elapsedSec = Math.max(0, Math.floor((Date.now() - new Date(t.startTime).getTime()) / 1000));
           dispatch(updateTaskTimerLocal(t._id, elapsedSec));
         }
       });
@@ -145,176 +104,45 @@ const EmployeeDashboard = () => {
     return () => clearInterval(interval);
   }, [tasks, dispatch]);
 
-  // Calculate task statistics
-  const taskStats = useMemo(() => {
-    const totalTasks = tasks.length;
-    const activeTasks = tasks.filter((t) => t.status === "in-progress").length;
-    const completedTasks = tasks.filter((t) => t.status === "completed").length;
-    const pendingTasks = tasks.filter((t) => t.status === "pending").length;
-    return { totalTasks, activeTasks, completedTasks, pendingTasks };
-  }, [tasks]);
-
-  // Separate daily tasks from regular tasks, with optional date filter
-  const { dailyTasks, regularTasks } = useMemo(() => {
-    let filteredTasks = tasks;
-    
-    // Filter by date if filterDate is set
-    if (filterDate) {
-      const filterDateStr = filterDate.toISOString().split("T")[0];
-      filteredTasks = tasks.filter((task) => {
-        // For completed tasks, filter by completedTime
-        if (task.status === "completed" && task.completedTime) {
-          const completedDate = new Date(task.completedTime).toISOString().split("T")[0];
-          return completedDate === filterDateStr;
-        }
-        // For other tasks, filter by createdAt or updatedAt
-        if (task.createdAt) {
-          const createdDate = new Date(task.createdAt).toISOString().split("T")[0];
-          return createdDate === filterDateStr;
-        }
-        return false;
-      });
-    }
-    
-    const daily = filteredTasks.filter((t) => t.isDaily === true);
-    const regular = filteredTasks.filter((t) => !t.isDaily || t.isDaily === false);
-    return { dailyTasks: daily, regularTasks: regular };
-  }, [tasks, filterDate]);
-
-  // Get tasks to display based on active view
   const displayTasks = useMemo(() => {
-    let tasks = activeTaskView === 'daily' ? dailyTasks : regularTasks;
+    let filteredTasks = activeTaskView === 'daily' ? tasks.filter(t => t.isDaily) : tasks.filter(t => !t.isDaily);
     
-    // Apply search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      tasks = tasks.filter(task => 
-        (task.title && task.title.toLowerCase().includes(query)) ||
-        (task.description && task.description.toLowerCase().includes(query)) ||
-        (task.remark && task.remark.toLowerCase().includes(query))
+      filteredTasks = filteredTasks.filter(t => 
+        (t.title?.toLowerCase().includes(query)) || (t.description?.toLowerCase().includes(query))
       );
     }
-    
-    // Apply status filter
-    if (!statusFilter.includes('all')) {
-      tasks = tasks.filter(task => statusFilter.includes(task.status || 'pending'));
+    if (statusFilter !== 'all') {
+      filteredTasks = filteredTasks.filter(t => (t.status || 'pending') === statusFilter);
     }
-    
-    // Apply priority filter
-    if (!priorityFilter.includes('all')) {
-      tasks = tasks.filter(task => priorityFilter.includes(task.priority || 'medium'));
+    if (priorityFilter !== 'all') {
+      filteredTasks = filteredTasks.filter(t => (t.priority || 'medium') === priorityFilter);
     }
-    
-    // Apply date filter
-    if (!dateFilter.includes('all')) {
-      const now = new Date();
-      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      
-      tasks = tasks.filter(task => {
-        const taskDate = task.createdAt ? new Date(task.createdAt) : null;
-        if (!taskDate) return false;
-        
-        const taskDay = new Date(taskDate.getFullYear(), taskDate.getMonth(), taskDate.getDate());
-        
-        let match = false;
-        if (dateFilter.includes('today') && taskDay.getTime() === today.getTime()) match = true;
-        if (dateFilter.includes('week')) {
-           const weekAgo = new Date(today);
-           weekAgo.setDate(weekAgo.getDate() - 7);
-           if (taskDay >= weekAgo) match = true;
-        }
-        if (dateFilter.includes('month')) {
-           const monthAgo = new Date(today);
-           monthAgo.setMonth(monthAgo.getMonth() - 1);
-           if (taskDay >= monthAgo) match = true;
-        }
-        return match;
-      });
-    }
-    
-    return tasks;
-  }, [activeTaskView, dailyTasks, regularTasks, searchQuery, statusFilter, priorityFilter, dateFilter]);
+    return filteredTasks;
+  }, [tasks, activeTaskView, searchQuery, statusFilter, priorityFilter]);
 
-  // Calendar helper functions
-  const getDaysInMonth = (date) => {
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const daysInMonth = lastDay.getDate();
-    const startingDayOfWeek = firstDay.getDay();
-    
-    const days = [];
-    for (let i = 0; i < startingDayOfWeek; i++) {
-      days.push(null);
-    }
-    for (let i = 1; i <= daysInMonth; i++) {
-      days.push(new Date(year, month, i));
-    }
-    return days;
+  const startTask = async (id, e) => {
+    e.stopPropagation();
+    try { await dispatch(asyncStartTask(id)); toast.success("Task started successfully"); }
+    catch (err) { toast.error("Failed to start task: " + err.message); }
   };
 
-  const getTasksForDate = (date) => {
-    if (!date) return [];
-    const dateStr = date.toISOString().split("T")[0];
-    return tasks.filter((task) => {
-      if (task.completedTime) {
-        const completedDate = new Date(task.completedTime).toISOString().split("T")[0];
-        return completedDate === dateStr;
-      }
-      return false;
-    });
-  };
-
-  const navigateMonth = (direction) => {
-    setSelectedDate((prev) => {
-      const newDate = new Date(prev);
-      newDate.setMonth(prev.getMonth() + direction);
-      return newDate;
-    });
-  };
-
-  const handleDateSelect = (date) => {
-    setSelectedDate(date);
-    setFilterDate(date);
-  };
-
-  const clearDateFilter = () => {
-    setFilterDate(null);
-    setSelectedDate(new Date());
-  };
-
-  const handleLogout = () => {
-    dispatch(asyncLogoutuser());
-    navigate("/");
-    toast.success("Logged out successfully");
-  };
-
-  const startTask = async (id) => {
-    try {
-      await dispatch(asyncStartTask(id));
-      toast.success("Task started successfully");
-    } catch (error) {
-      toast.error("Failed to start task: " + error.message);
-    }
-  };
-
-  const submitTask = (id) => {
+  const openSubmitModal = (id, e) => {
+    e.stopPropagation();
     setTaskToSubmit(id);
     setRemarkText("");
     setShowRemarkModal(true);
   };
 
-  const handleSubmitWithRemark = async () => {
+  const handleSubmitWithRemark = async (e) => {
+    e.preventDefault();
     try {
       await dispatch(asyncSubmitTask(taskToSubmit, remarkText));
       toast.success("Task submitted successfully");
       setShowRemarkModal(false);
       setTaskToSubmit(null);
-      setRemarkText("");
-    } catch (error) {
-      toast.error("Failed to submit task: " + error.message);
-    }
+    } catch (err) { toast.error("Failed to submit task: " + err.message); }
   };
 
   const formatTime = (sec) => {
@@ -324,547 +152,176 @@ const EmployeeDashboard = () => {
     return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
   };
 
-  const truncateText = (text, limit = 100) => {
-    if (!text) return "";
-    return text.length > limit ? text.slice(0, limit) + "..." : text;
-  };
-
-  // Calculate timer color based on percentage of estimated time
-  const getTimerColor = (task) => {
-    if (!task.deadline || task.status !== "in-progress") return "var(--success-color)";
-    
-    const now = Date.now();
-    const startTime = new Date(task.startTime).getTime();
-    const deadline = new Date(task.deadline).getTime();
-    const elapsed = now - startTime;
-    const total = deadline - startTime;
-    
-    if (total <= 0) return "var(--error-color)";
-    
-    const percentage = (elapsed / total) * 100;
-    
-    if (percentage >= 80) return "var(--error-color)";
-    if (percentage >= 50) return "var(--warning-color)";
-    return "var(--success-color)";
-  };
-
-  const getTimerBgColor = (task) => {
-    if (!task.deadline || task.status !== "in-progress") return "rgba(40, 167, 69, 0.1)";
-    
-    const now = Date.now();
-    const startTime = new Date(task.startTime).getTime();
-    const deadline = new Date(task.deadline).getTime();
-    const elapsed = now - startTime;
-    const total = deadline - startTime;
-    
-    if (total <= 0) return "rgba(220, 53, 69, 0.1)";
-    
-    const percentage = (elapsed / total) * 100;
-    
-    if (percentage >= 80) return "rgba(220, 53, 69, 0.1)";
-    if (percentage >= 50) return "rgba(255, 193, 7, 0.1)";
-    return "rgba(40, 167, 69, 0.1)";
-  };
-
-  const formatClockTime = (date) => {
-    return date.toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hour12: true,
-    });
-  };
-
-  const employeeName = user?.fullName
-    ? `${user.fullName.firstName} ${user.fullName.lastName}`
-    : user?.email || "Employee";
-
-  const handleViewTaskDetails = (task) => {
-    setSelectedTask(task);
-    setShowDetailsModal(true);
-  };
-
-  const handleCloseDetailsModal = () => {
-    setShowDetailsModal(false);
-    setSelectedTask(null);
+  const handleEditorSave = async (data) => {
+    try {
+      await dispatch(asyncUpdateEmployeeTask(selectedTask._id, {
+        status: data.status,
+        remark: data.remark,
+      }));
+      toast.success("Task updated successfully");
+      setShowDetailsModal(false);
+      setSelectedTask(null);
+    } catch (error) {
+       toast.error("Failed to update task");
+    }
   };
 
   return (
-    <div className="emp-main-wrapper">
-      {/* MOBILE MENU TOGGLE */}
-      <button 
-        className="mobile-menu-toggle"
-        onClick={() => setSidebarOpen(!sidebarOpen)}
-        aria-label="Toggle menu"
-      >
-        {sidebarOpen ? <RiCloseLine size={24} /> : <RiMenuLine size={24} />}
-      </button>
-
-      {/* MOBILE OVERLAY */}
-      {sidebarOpen && (
-        <div 
-          className="mobile-overlay"
-          onClick={() => setSidebarOpen(false)}
-        ></div>
+    <div className="flex h-screen w-full bg-background overflow-hidden relative">
+      {/* Mobile Sidebar Overlay */}
+      {isMobile && sidebarOpen && (
+        <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
       )}
 
-      {/* SIDEBAR */}
-      <aside className={`emp-sidebar ${sidebarOpen ? "sidebar-open" : ""} ${!isSidebarVisible ? "sidebar-collapsed" : ""}`}>
-        <div className="emp-sidebar-header">
-          <button 
-            className="sidebar-collapse-btn"
-            onClick={() => setIsSidebarVisible(false)}
-            title="Collapse Sidebar"
-          >
-            <RiMenuFoldLine size={20} />
-          </button>
-          <div className="emp-info">
-            <h3 className="emp-name">{employeeName}</h3>
-          </div>
-        </div>
+      {/* Sidebar */}
+      <div className={`fixed inset-y-0 left-0 z-50 w-64 transform transition-all duration-300 ease-in-out lg:relative ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:-ml-64"}`}>
+        <AppSidebar
+          role="employee"
+          activePage={activeTaskView}
+          onNavigate={(page) => {
+            setActiveTaskView(page);
+            if (isMobile) setSidebarOpen(false);
+          }}
+          onCollapse={() => setSidebarOpen(false)}
+        />
+      </div>
 
-        {/* Task Type Navigation */}
-        <div className="task-type-nav">
-          <button 
-            className={`task-type-btn ${activeTaskView === 'daily' ? 'active' : ''}`}
-            onClick={() => {
-              setActiveTaskView('daily');
-              setSidebarOpen(false);
-            }}
-          >
-            <RiTimeLine size={18} />
-            <span>Daily Tasks</span>
-          </button>
-          <button 
-            className={`task-type-btn ${activeTaskView === 'regular' ? 'active' : ''}`}
-            onClick={() => {
-              setActiveTaskView('regular');
-              setSidebarOpen(false);
-            }}
-          >
-            <RiTaskLine size={18} />
-            <span>Regular Tasks</span>
-          </button>
-        </div>
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden text-foreground">
+        <AppHeader 
+          role="employee"
+          userName={user?.fullName?.firstName || "Employee"}
+          sidebarOpen={sidebarOpen}
+          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+        />
 
-        <div className="emp-sidebar-footer">
-          <button 
-            className="emp-logout-btn" 
-            onClick={() => {
-              handleLogout();
-              setSidebarOpen(false);
-            }}
-          >
-            <RiLogoutBoxLine size={16} />
-            Logout
-          </button>
-        </div>
-      </aside>
-
-      {/* MAIN CONTENT */}
-      <div className="task-content">
-        <div className="section-header">
-          <div className="header-left-content">
-            {!isSidebarVisible && (
-              <button 
-                className="sidebar-expand-btn"
-                onClick={() => setIsSidebarVisible(true)}
-                title="Expand Sidebar"
-              >
-                <RiMenuUnfoldLine size={24} />
-              </button>
-            )}
-            <div>
-              <h2 className="section-title">My Tasks</h2>
-              <p className="section-subtitle">Tasks assigned to you</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Search and Filters */}
-        <div className="search-filter-bar">
-          <SearchBar
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search tasks..."
-            width="80%"
+        {showDetailsModal && selectedTask ? (
+          <main className="flex-1 overflow-hidden p-4 md:p-6 lg:p-8">
+            <TaskEditor 
+              task={selectedTask}
+              mode="edit"
+              role="employee"
+              onSave={handleEditorSave}
+              onCancel={() => {
+                setShowDetailsModal(false);
+                setSelectedTask(null);
+              }}
+            />
+          </main>
+        ) : (
+          <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 space-y-6">
+          <PageHeader 
+            title="My Tasks"
+            subtitle={`Your assigned ${activeTaskView} tasks`}
           />
-          
-          <button 
-            className="filter-toggle-btn" 
-            onClick={() => setIsFilterOpen(true)}
-          >
-            <RiFilter3Line size={20} />
-            <span>Filters</span>
-            {(() => {
-              const count = (statusFilter.includes('all') ? 0 : statusFilter.length) + 
-                            (priorityFilter.includes('all') ? 0 : priorityFilter.length) + 
-                            (dateFilter.includes('all') ? 0 : dateFilter.length);
-              return count > 0 && <span className="filter-count-badge">{count}</span>;
-            })()}
-          </button>
-        </div>
 
-        {/* Filter Sidebar Overlay */}
-        {isFilterOpen && (
-          <div className="filter-overlay" onClick={() => setIsFilterOpen(false)}></div>
-        )}
+          <div className="flex flex-col sm:flex-row gap-3 items-center bg-card p-2 rounded-lg border border-border">
+            <SearchBar value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search tasks..." />
+            
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full sm:w-[160px]">
+                <SelectValue placeholder="All Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="in-progress">In Progress</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+              </SelectContent>
+            </Select>
 
-        {/* Filter Sidebar */}
-        <div className={`filter-sidebar ${isFilterOpen ? 'open' : ''}`}>
-          <div className="filter-sidebar-header">
-            <h3>Filters</h3>
-            <button className="close-filter-btn" onClick={() => setIsFilterOpen(false)}>
-              <RiCloseLine size={24} />
-            </button>
-          </div>
-          
-          <div className="filter-sidebar-content">
-            <div className="filter-section">
-              <span className="filter-label">Status</span>
-              <div className="filter-pills vertical">
-                <button
-                  className={`filter-pill ${statusFilter.includes('all') ? 'active' : ''}`}
-                  onClick={() => setStatusFilter(['all'])}
-                >
-                  All Status
-                </button>
-                {['pending', 'in-progress', 'completed'].map(status => (
-                  <button
-                    key={status}
-                    className={`filter-pill ${statusFilter.includes(status) ? 'active' : ''}`}
-                    onClick={() => {
-                       if (statusFilter.includes('all')) {
-                           setStatusFilter([status]);
-                       } else {
-                           if (statusFilter.includes(status)) {
-                               const newFilters = statusFilter.filter(s => s !== status);
-                               setStatusFilter(newFilters.length ? newFilters : ['all']);
-                           } else {
-                               setStatusFilter([...statusFilter, status]);
-                           }
-                       }
-                    }}
-                  >
-                    {status.charAt(0).toUpperCase() + status.slice(1).replace('-', ' ')}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="filter-section">
-              <span className="filter-label">Priority</span>
-              <div className="filter-pills vertical">
-                <button
-                  className={`filter-pill ${priorityFilter.includes('all') ? 'active' : ''}`}
-                  onClick={() => setPriorityFilter(['all'])}
-                >
-                  All Priority
-                </button>
-                {['low', 'medium', 'high'].map(priority => (
-                  <button
-                    key={priority}
-                    className={`filter-pill ${priorityFilter.includes(priority) ? 'active' : ''}`}
-                    onClick={() => {
-                       if (priorityFilter.includes('all')) {
-                           setPriorityFilter([priority]);
-                       } else {
-                           if (priorityFilter.includes(priority)) {
-                               const newFilters = priorityFilter.filter(p => p !== priority);
-                               setPriorityFilter(newFilters.length ? newFilters : ['all']);
-                           } else {
-                               setPriorityFilter([...priorityFilter, priority]);
-                           }
-                       }
-                    }}
-                  >
-                    {priority.charAt(0).toUpperCase() + priority.slice(1)}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="filter-section">
-              <span className="filter-label">Date</span>
-              <div className="filter-pills vertical">
-                <button
-                  className={`filter-pill ${dateFilter.includes('all') ? 'active' : ''}`}
-                  onClick={() => setDateFilter(['all'])}
-                >
-                  All Time
-                </button>
-                {['today', 'week', 'month'].map(date => (
-                  <button
-                    key={date}
-                    className={`filter-pill ${dateFilter.includes(date) ? 'active' : ''}`}
-                    onClick={() => {
-                       if (dateFilter.includes('all')) {
-                           setDateFilter([date]);
-                       } else {
-                           if (dateFilter.includes(date)) {
-                               const newFilters = dateFilter.filter(d => d !== date);
-                               setDateFilter(newFilters.length ? newFilters : ['all']);
-                           } else {
-                               setDateFilter([...dateFilter, date]);
-                           }
-                       }
-                    }}
-                  >
-                   {date === 'today' ? 'Today' : (date === 'week' ? 'This Week' : 'This Month')}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+              <SelectTrigger className="w-full sm:w-[160px]">
+                <SelectValue placeholder="All Priorities" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Priorities</SelectItem>
+                <SelectItem value="low">Low</SelectItem>
+                <SelectItem value="medium">Medium</SelectItem>
+                <SelectItem value="high">High</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
-          <div className="filter-sidebar-footer">
-            <button
-                className={`clear-all-filters-btn full-width ${
-                  statusFilter.includes('all') && priorityFilter.includes('all') && dateFilter.includes('all') ? 'disabled' : ''
-                }`}
-                onClick={() => {
-                  setStatusFilter(['all']);
-                  setPriorityFilter(['all']);
-                  setDateFilter(['all']);
-                }}
-                disabled={statusFilter.includes('all') && priorityFilter.includes('all') && dateFilter.includes('all')}
-              >
-                Clear All Filters
-            </button>
-          </div>
-        </div>
-
-        <div className="content-with-calendar">
-          <div className="tasks-section">
-            {/* Modern Task Table */}
-            <div className="modern-tasks-container">
-              {displayTasks.length > 0 ? (
-                <table className="modern-tasks-table">
-                  <thead>
-                    <tr>
-                      <th>Task</th>
-                      <th>Type</th>
-                      <th>Priority</th>
-                      <th>Status</th>
-                      <th>Timer</th>
-                      <th>Remarks</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {displayTasks.map((task) => (
-                      <tr 
-                        key={task._id} 
-                        className={`task-row ${task.status}`}
-                        onClick={() => handleViewTaskDetails(task)}
-                        style={{ cursor: 'pointer' }}
-                      >
-                        <td className="task-info-cell">
-                          <div className="task-info">
-                            <strong className="task-name">{task.title || "Untitled Task"}</strong>
-                            <p className="task-description">{truncateText(task.description || "No description", 60)}</p>
-                          </div>
-                        </td>
-                        <td>
-                          <span className={`task-type-badge ${activeTaskView}`}>
-                            {activeTaskView === 'daily' ? 'Daily' : 'Regular'}
-                          </span>
-                        </td>
-                        <td>
-                          <span className={`priority-badge ${task.priority || "medium"}`}>
-                            {task.priority || "medium"}
-                          </span>
-                        </td>
-                        <td>
-                          <span className={`status-badge ${task.status || "pending"}`}>
-                            {(task.status || "pending").replace("-", " ")}
-                          </span>
-                        </td>
-                        <td className="timer-cell">
-                          {(task.status || "pending") === "in-progress" && (
-                            <span
-                              className="task-timer-badge"
-                              style={{
-                                color: getTimerColor(task),
-                                background: getTimerBgColor(task),
-                              }}
-                            >
-                              <RiTimeLine size={12} />
-                              {task.startTime
-                                ? formatTime(
-                                    Math.max(
-                                      0,
-                                      Math.floor(
-                                        (Date.now() - new Date(task.startTime).getTime()) / 1000
-                                      )
-                                    )
-                                  )
-                                : formatTime(task.timer || 0)}
-                            </span>
-                          )}
-                          {(task.status || "pending") !== "in-progress" && "-"}
-                        </td>
-                        <td className="remarks-cell">
-                          {task.remark ? (
-                            <span className="remark-text" title={task.remark}>
-                              {truncateText(task.remark, 50)}
-                            </span>
-                          ) : (
-                            "-"
-                          )}
-                        </td>
-                        <td className="actions-cell">
-                          <div className="task-actions">
-                            {(task.status || "pending") === "pending" && (
-                              <button
-                                className="action-btn start-btn"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  startTask(task._id);
-                                }}
-                              >
-                                Start
-                              </button>
-                            )}
-                            {(task.status || "pending") === "in-progress" && (
-                              <button
-                                className="action-btn submit-btn"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  submitTask(task._id);
-                                }}
-                              >
-                                Submit
-                              </button>
-                            )}
-                            {(task.status || "pending") === "completed" && (
-                              <span className="completed-badge">Done</span>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ) : (
-                <div className="no-tasks-state">
-                  <RiTaskLine size={48} />
-                  <h3>No {activeTaskView} tasks found</h3>
-                  <p>There are no {activeTaskView} tasks assigned to you yet.</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* CALENDAR COMPONENT */}
-          {/* <div className="calendar-container">
-            <div className="calendar-sidebar-header">
-              <h3>Calendar</h3>
-              {filterDate && (
-                <button className="calendar-clear-btn" onClick={clearDateFilter} title="Clear filter">
-                  Clear
-                </button>
-              )}
-            </div>
-            <div className="calendar-view">
-              <div className="calendar-header">
-                <button className="calendar-nav-btn" onClick={() => navigateMonth(-1)}>
-                  ←
-                </button>
-                <h4 className="calendar-month-title">
-                  {selectedDate.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
-                </h4>
-                <button className="calendar-nav-btn" onClick={() => navigateMonth(1)}>
-                  →
-                </button>
-              </div>
-              <div className="calendar-grid">
-                <div className="calendar-weekdays">
-                  {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day, idx) => (
-                    <div key={idx} className="calendar-weekday">
-                      {day}
-                    </div>
-                  ))}
-                </div>
-                <div className="calendar-days">
-                  {getDaysInMonth(selectedDate).map((date, index) => {
-                    const dayTasks = date ? getTasksForDate(date) : [];
-                    const isToday = date && date.toDateString() === new Date().toDateString();
-                    const isSelected = date && filterDate && date.toDateString() === filterDate.toDateString();
-                    
-                    return (
-                      <div
-                        key={index}
-                        className={`calendar-day ${!date ? "empty" : ""} ${isToday ? "today" : ""} ${isSelected ? "selected" : ""}`}
-                        onClick={() => date && handleDateSelect(date)}
-                      >
-                        {date && (
-                          <>
-                            <span className="calendar-day-number">{date.getDate()}</span>
-                            {dayTasks.length > 0 && (
-                              <span className="calendar-task-indicator" title={`${dayTasks.length} task(s)`}>
-                                {dayTasks.length}
-                              </span>
-                            )}
-                          </>
+          {displayTasks.length === 0 ? (
+            <EmptyState 
+              icon={activeTaskView === "daily" ? <RiTimeLine size={24} /> : <RiTaskLine size={24} />}
+              title={`No ${activeTaskView} tasks found`}
+              description="You do not have any tasks matching the current filters."
+            />
+          ) : (
+            <Card className="overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Task</TableHead>
+                    <TableHead>Priority</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Timer</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {displayTasks.map((task) => (
+                    <TableRow key={task._id} onClick={() => { setSelectedTask(task); setShowDetailsModal(true); }} className="cursor-pointer">
+                      <TableCell className="max-w-[250px]">
+                        <div className="font-semibold truncate">{task.title}</div>
+                        <div className="text-xs text-muted-foreground truncate">{task.description}</div>
+                      </TableCell>
+                      <TableCell><PriorityBadge priority={task.priority} /></TableCell>
+                      <TableCell><StatusBadge status={task.status} /></TableCell>
+                      <TableCell>
+                        {task.status === "in-progress" ? (
+                          <Badge variant="outline" className="font-mono text-primary border-primary/20 bg-primary/5">
+                            <RiTimeLine className="mr-1 h-3 w-3" />
+                            {task.startTime ? formatTime(Math.max(0, Math.floor((Date.now() - new Date(task.startTime).getTime()) / 1000))) : formatTime(task.timer || 0)}
+                          </Badge>
+                        ) : "-"}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {task.status === "pending" && (
+                          <Button size="sm" onClick={(e) => startTask(task._id, e)}>Start</Button>
                         )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          </div> */}
-        </div>
+                        {task.status === "in-progress" && (
+                          <Button size="sm" variant="secondary" onClick={(e) => openSubmitModal(task._id, e)}>Submit</Button>
+                        )}
+                        {task.status === "completed" && (
+                          <Badge variant="secondary">Done</Badge>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Card>
+          )}
 
-        {/* Remark Modal */}
-        {showRemarkModal && (
-          <div className="remark-modal-overlay" onClick={() => setShowRemarkModal(false)}>
-            <div className="remark-modal" onClick={(e) => e.stopPropagation()}>
-              <div className="remark-modal-header">
-                <h3>Add Remark</h3>
-                <button className="close-btn" onClick={() => setShowRemarkModal(false)}>
-                  ×
-                </button>
-              </div>
-              <div className="remark-modal-body">
-                <p className="remark-modal-text">Please add a remark for this task submission:</p>
-                <textarea
-                  className="remark-textarea"
-                  placeholder="Enter your remark here..."
-                  value={remarkText}
-                  onChange={(e) => setRemarkText(e.target.value)}
-                  rows={5}
-                />
-              </div>
-              <div className="remark-modal-footer">
-                <button
-                  className="cancel-remark-btn"
-                  onClick={() => {
-                    setShowRemarkModal(false);
-                    setTaskToSubmit(null);
-                    setRemarkText("");
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  className="submit-remark-btn"
-                  onClick={handleSubmitWithRemark}
-                  disabled={!remarkText.trim()}
-                >
-                  Submit Task
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Task Details Modal */}
-        {showDetailsModal && selectedTask && (
-          <TaskDetailsModal task={selectedTask} onClose={handleCloseDetailsModal} />
+        </main>
         )}
       </div>
+
+      <Dialog open={showRemarkModal} onOpenChange={setShowRemarkModal}>
+        <DialogContent>
+          <form onSubmit={handleSubmitWithRemark}>
+            <DialogHeader>
+              <DialogTitle>Submit Task</DialogTitle>
+              <DialogDescription>Add a remark detailing the work completed.</DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              <Textarea
+                placeholder="Enter your remark here..."
+                value={remarkText}
+                onChange={(e) => setRemarkText(e.target.value)}
+                required
+                rows={5}
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setShowRemarkModal(false)}>Cancel</Button>
+              <Button type="submit" disabled={!remarkText.trim()}>Submit Task</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

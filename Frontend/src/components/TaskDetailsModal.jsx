@@ -1,115 +1,111 @@
-import React, { useEffect } from 'react';
-import { RiCloseLine, RiTimeLine, RiCalendarLine, RiUserLine, RiFlagLine, RiTaskLine } from '@remixicon/react';
-import '../styles/TaskDetailsModal.css';
+import React, { useEffect } from "react";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+} from "./ui/dialog";
+import { Badge } from "./ui/badge";
+import { Separator } from "./ui/separator";
+import StatusBadge from "./common/StatusBadge";
+import PriorityBadge from "./common/PriorityBadge";
+import {
+  RiTimeLine, RiCalendarLine, RiUserLine, RiTaskLine,
+} from "@remixicon/react";
 
+/**
+ * TaskDetailsModal — shared by Admin (TaskPage) and Employee (EmployeeDashboard)
+ * Refactored from custom CSS overlay to shadcn Dialog
+ */
 const TaskDetailsModal = ({ task, onClose }) => {
   if (!task) return null;
 
-  // Close on Escape key
-  useEffect(() => {
-    const handleEsc = (e) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', handleEsc);
-    return () => window.removeEventListener('keydown', handleEsc);
-  }, [onClose]);
-
-  // Format date helper
   const formatDate = (dateString) => {
-    if (!dateString) return 'Not set';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    if (!dateString) return "Not set";
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric", month: "long", day: "numeric",
+      hour: "2-digit", minute: "2-digit",
     });
   };
 
-  // Get status color class
-  const getStatusClass = (status) => {
-    switch (status) {
-      case 'completed': return 'status-completed';
-      case 'in-progress': return 'status-progress';
-      case 'pending': return 'status-pending';
-      default: return '';
-    }
-  };
-
-  // Get priority color class
-  const getPriorityClass = (priority) => {
-    switch (priority) {
-      case 'high': return 'priority-high';
-      case 'medium': return 'priority-medium';
-      case 'low': return 'priority-low';
-      default: return '';
-    }
-  };
+  const assigneeName = task.assignedTo?.fullName
+    ? `${task.assignedTo.fullName.firstName} ${task.assignedTo.fullName.lastName}`
+    : task.assignedTo?.email || "Unassigned";
 
   return (
-    <div className="task-details-overlay" onClick={onClose}>
-      <div className="task-details-modal" onClick={(e) => e.stopPropagation()}>
-        <span className="close-details-btn" onClick={onClose}>
-          <RiCloseLine size={24} />
-        </span>
-
-        <div className="task-details-header">
-          <div className="task-id-badge">Task #{task._id.slice(-6)}</div>
-          <h2 className="task-details-title">{task.title}</h2>
-          <div className="task-meta-row">
-            <span className={`task-status-badge ${getStatusClass(task.status)}`}>
-              {task.status.replace('-', ' ')}
-            </span>
-            <span className={`task-priority-badge ${getPriorityClass(task.priority)}`}>
-              <RiFlagLine size={14} />
-              {task.priority} Priority
-            </span>
+    <Dialog open={!!task} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent className="max-w-xl">
+        <DialogHeader>
+          <div className="flex items-center gap-2 flex-wrap mb-1">
+            <Badge variant="outline" className="font-mono text-xs">
+              #{task._id.slice(-6)}
+            </Badge>
+            <StatusBadge status={task.status} />
+            <PriorityBadge priority={task.priority} showIcon />
           </div>
+          <DialogTitle className="text-xl leading-tight">{task.title}</DialogTitle>
+        </DialogHeader>
+
+        <Separator />
+
+        {/* Description */}
+        <div className="space-y-1">
+          <div className="flex items-center gap-1.5 text-sm font-medium">
+            <RiTaskLine size={16} className="text-primary" />
+            Description
+          </div>
+          <p className="text-sm text-muted-foreground leading-relaxed pl-5">
+            {task.description || "No description provided."}
+          </p>
         </div>
 
-        <div className="task-details-body">
-          <div className="details-section">
-            <h3><RiTaskLine size={18} /> Description</h3>
-            <p className="task-description">{task.description || "No description provided."}</p>
+        <Separator />
+
+        {/* Meta grid */}
+        <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="space-y-1">
+            <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <RiUserLine size={14} />
+              Assigned To
+            </div>
+            <p className="font-medium">{assigneeName}</p>
           </div>
 
-          <div className="details-grid">
-            <div className="detail-item">
-              <span className="detail-label"><RiUserLine size={16} /> Assigned To</span>
-              <span className="detail-value">
-                {task.assignedTo?.fullName 
-                  ? `${task.assignedTo.fullName.firstName} ${task.assignedTo.fullName.lastName}`
-                  : (task.assignedTo?.email || "Unassigned")}
-              </span>
+          <div className="space-y-1">
+            <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <RiCalendarLine size={14} />
+              Created
             </div>
+            <p className="font-medium">{formatDate(task.createdAt)}</p>
+          </div>
 
-            <div className="detail-item">
-              <span className="detail-label"><RiCalendarLine size={16} /> Created At</span>
-              <span className="detail-value">{formatDate(task.createdAt)}</span>
+          <div className="space-y-1">
+            <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <RiTimeLine size={14} />
+              Deadline
             </div>
+            <p className="font-medium">{formatDate(task.deadline)}</p>
+          </div>
 
-            <div className="detail-item">
-              <span className="detail-label"><RiTimeLine size={16} /> Deadline</span>
-              <span className="detail-value">{formatDate(task.deadline)}</span>
-            </div>
-            
-            {task.completedTime && (
-              <div className="detail-item">
-                <span className="detail-label"><RiTimeLine size={16} /> Completed At</span>
-                <span className="detail-value">{formatDate(task.completedTime)}</span>
+          {task.completedTime && (
+            <div className="space-y-1">
+              <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <RiTimeLine size={14} />
+                Completed
               </div>
-            )}
-          </div>
-
-          {task.remark && (
-            <div className="details-section remark-section">
-              <h3>Remark</h3>
-              <p>{task.remark}</p>
+              <p className="font-medium">{formatDate(task.completedTime)}</p>
             </div>
           )}
         </div>
-      </div>
-    </div>
+
+        {task.remark && (
+          <>
+            <Separator />
+            <div className="space-y-1">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Remark</p>
+              <p className="text-sm text-muted-foreground bg-muted rounded-md px-3 py-2">{task.remark}</p>
+            </div>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 };
 
