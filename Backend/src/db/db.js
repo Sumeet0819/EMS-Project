@@ -1,13 +1,9 @@
-const mongoose = require('mongoose');
-require('dotenv').config();
-
+const prisma = require('./prisma');
 
 async function connectDB() {
-
     try {
-        await mongoose.connect(process.env.MONGO_URI)
-        console.log('Database connected successfully'); 
-        
+        await prisma.$connect();
+        console.log('PostgreSQL Database connected successfully via Prisma'); 
     } catch (error) {
         console.error('Database connection error:', error);
     }

@@ -1,26 +1,61 @@
-const Task = require("../models/task.model");
+const prisma = require("../db/prisma");
+
+// Helper to map Prisma models to the shape the React Frontend expects (Mongoose shape)
+function formatTask(task) {
+  if (!task) return null;
+  return {
+    ...task,
+    _id: task.id, // Frontend uses _id for React keys and URLs
+    assignedTo: task.assignedTo ? {
+      _id: task.assignedTo.id,
+      id: task.assignedTo.id,
+      email: task.assignedTo.email,
+      fullName: { firstName: task.assignedTo.firstName, lastName: task.assignedTo.lastName }
+    } : task.assignedToId,
+    createdBy: task.createdBy ? {
+      _id: task.createdBy.id,
+      id: task.createdBy.id,
+      email: task.createdBy.email,
+      fullName: { firstName: task.createdBy.firstName, lastName: task.createdBy.lastName }
+    } : task.createdById
+  };
+}
+
+const userSelect = {
+  select: { id: true, email: true, firstName: true, lastName: true }
+};
 
 // Create Task
 exports.createTask = async (req, res) => {
   try {
-    const task = await Task.create({
-      ...req.body,
-      createdBy: req.user._id
+    const { assignedTo, title, description, priority, deadline, isDaily } = req.body;
+    
+    const task = await prisma.task.create({
+      data: {
+        title,
+        description: description || "",
+        priority: priority || "medium",
+        deadline: deadline ? new Date(deadline) : null,
+        isDaily: isDaily || false,
+        assignedToId: assignedTo, // mapped from frontend's Mongoose ObjectId
+        createdById: req.user.id
+      },
+      include: {
+        assignedTo: userSelect,
+        createdBy: userSelect
+      }
     });
 
-    // Populate task with user details for notification
-    const populatedTask = await Task.findById(task._id)
-      .populate("assignedTo", "email fullName")
-      .populate("createdBy", "email fullName");
+    const formattedTask = formatTask(task);
 
     // Emit socket event to notify the assigned employee
     if (global.io && global.connectedUsers) {
-      const assignedToId = task.assignedTo.toString();
+      const assignedToId = task.assignedToId;
       const socketId = global.connectedUsers.get(assignedToId);
       
       if (socketId) {
         global.io.to(socketId).emit('taskAssigned', {
-          task: populatedTask,
+          task: formattedTask,
           message: `New task assigned: ${task.title}`,
           timestamp: new Date()
         });
@@ -33,7 +68,7 @@ exports.createTask = async (req, res) => {
     res.status(201).json({
       success: true,
       message: "Task created successfully",
-      data: populatedTask || task,
+      data: formattedTask,
     });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -43,11 +78,15 @@ exports.createTask = async (req, res) => {
 // Get all tasks
 exports.getTasks = async (req, res) => {
   try {
-    const tasks = await Task.find()
-      .populate("assignedTo", "email fullName")
-      .populate("createdBy", "email fullName");
+    const tasks = await prisma.task.findMany({
+      include: {
+        assignedTo: userSelect,
+        createdBy: userSelect
+      },
+      orderBy: { createdAt: 'desc' }
+    });
 
-    res.status(200).json({ success: true, data: tasks });
+    res.status(200).json({ success: true, data: tasks.map(formatTask) });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -56,13 +95,17 @@ exports.getTasks = async (req, res) => {
 // Get single task
 exports.getTaskById = async (req, res) => {
   try {
-    const task = await Task.findById(req.params.id)
-      .populate("assignedTo", "email fullName")
-      .populate("createdBy", "email fullName");
+    const task = await prisma.task.findUnique({
+      where: { id: req.params.id },
+      include: {
+        assignedTo: userSelect,
+        createdBy: userSelect
+      }
+    });
 
     if (!task) return res.status(404).json({ success: false, message: "Task not found" });
 
-    res.status(200).json({ success: true, data: task });
+    res.status(200).json({ success: true, data: formatTask(task) });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -71,116 +114,102 @@ exports.getTaskById = async (req, res) => {
 // Update Task
 exports.updateTask = async (req, res) => {
   try {
-    const { status, ...otherUpdates } = req.body;
+    const { status, remark, assignedTo, title, description, priority, deadline } = req.body;
     
     // Get the original task to check if assignedTo changed
-    const originalTask = await Task.findById(req.params.id);
+    const originalTask = await prisma.task.findUnique({ where: { id: req.params.id } });
     if (!originalTask) {
       return res.status(404).json({ success: false, message: "Task not found" });
     }
 
-    const updateData = { ...otherUpdates };
+    const updateData = {};
+    if (title !== undefined) updateData.title = title;
+    if (description !== undefined) updateData.description = description;
+    if (priority !== undefined) updateData.priority = priority;
+    if (remark !== undefined) updateData.remark = remark;
+    if (assignedTo !== undefined) updateData.assignedToId = assignedTo;
+    if (deadline !== undefined) updateData.deadline = deadline ? new Date(deadline) : null;
     
     // Add startTime when status changes to in-progress
-    if (status === "in-progress") {
-      updateData.status = status;
-      updateData.startTime = new Date();
-    } else if (status === "completed") {
-      updateData.status = status;
-      updateData.completedTime = new Date();
-      // If remark is provided, add it
-      if (req.body.remark !== undefined) {
-        updateData.remark = req.body.remark;
+    if (status) {
+      // Prism enum requires replacing hyphens with underscores if mapped, but our Prisma Schema handles it implicitly.
+      // E.g 'in-progress' -> 'in_progress'. Wait, the value from req.body is 'in-progress'.
+      // In JS, Prisma enums are exact strings. In schema we used @map("in-progress") but the JS value is 'in_progress'.
+      updateData.status = status === "in-progress" ? "in_progress" : status;
+      
+      if (status === "in-progress") {
+        updateData.startTime = new Date();
+      } else if (status === "completed") {
+        updateData.completedTime = new Date();
       }
-    } else {
-      updateData.status = status;
     }
 
-    const updated = await Task.findByIdAndUpdate(req.params.id, updateData, {
-      new: true,
-    }).populate("assignedTo", "email fullName")
-     .populate("createdBy", "email fullName");
+    const updatedTask = await prisma.task.update({
+      where: { id: req.params.id },
+      data: updateData,
+      include: {
+        assignedTo: userSelect,
+        createdBy: userSelect
+      }
+    });
 
-    if (!updated) return res.status(404).json({ success: false, message: "Task not found" });
+    const formattedTask = formatTask(updatedTask);
 
     // Emit socket notifications for task updates
     if (global.io && global.connectedUsers) {
-      const originalAssignedTo = originalTask.assignedTo?.toString();
-      const newAssignedTo = updated.assignedTo?._id?.toString() || updated.assignedTo?.toString();
+      const originalAssignedTo = originalTask.assignedToId;
+      const newAssignedTo = updatedTask.assignedToId;
       
       // Check if assignedTo changed - notify new assignee
-      if (updateData.assignedTo && originalAssignedTo !== newAssignedTo) {
+      if (assignedTo && originalAssignedTo !== newAssignedTo) {
         const newSocketId = global.connectedUsers.get(newAssignedTo);
         
         if (newSocketId) {
           global.io.to(newSocketId).emit('taskAssigned', {
-            task: updated,
-            message: `Task reassigned to you: ${updated.title}`,
+            task: formattedTask,
+            message: `Task reassigned to you: ${updatedTask.title}`,
             timestamp: new Date()
           });
-          console.log(`Reassignment notification sent to employee ${newAssignedTo} via socket ${newSocketId}`);
         }
       }
       
       // Notify the assigned employee (current or new) about the task update
-      const assignedToId = newAssignedTo || originalAssignedTo;
-      if (assignedToId) {
-        const socketId = global.connectedUsers.get(assignedToId);
+      const assignedToIdToNotify = newAssignedTo || originalAssignedTo;
+      if (assignedToIdToNotify) {
+        const socketId = global.connectedUsers.get(assignedToIdToNotify);
         
         if (socketId) {
-          // Determine what changed for a more informative message
-          const changes = [];
-          if (updateData.title && updateData.title !== originalTask.title) changes.push('title');
-          if (updateData.description && updateData.description !== originalTask.description) changes.push('description');
-          if (updateData.priority && updateData.priority !== originalTask.priority) changes.push('priority');
-          if (updateData.deadline && new Date(updateData.deadline).getTime() !== new Date(originalTask.deadline || 0).getTime()) changes.push('deadline');
-          if (updateData.status && updateData.status !== originalTask.status) changes.push('status');
-          
-          const changeMessage = changes.length > 0 
-            ? `Task updated: ${changes.join(', ')} changed`
-            : 'Task updated';
-          
           global.io.to(socketId).emit('taskUpdated', {
-            task: updated,
-            message: changeMessage,
+            task: formattedTask,
+            message: 'Task updated',
             timestamp: new Date()
           });
-          console.log(`Update notification sent to employee ${assignedToId} via socket ${socketId}`);
         }
       }
 
       // Notify the task creator/admin when status changes (started or completed)
       const statusChanged = updateData.status && updateData.status !== originalTask.status;
-      if (statusChanged && originalTask.createdBy) {
-        const creatorId = originalTask.createdBy?.toString();
+      if (statusChanged && originalTask.createdById) {
+        const creatorId = originalTask.createdById;
         const creatorSocketId = global.connectedUsers.get(creatorId);
         
-        // Don't notify creator if they are also the assigned employee (already notified above)
-        if (creatorSocketId && creatorId !== assignedToId) {
+        if (creatorSocketId && creatorId !== assignedToIdToNotify) {
           let statusMessage = '';
-          if (updateData.status === 'in-progress') {
-            statusMessage = `Task started: ${updated.title}`;
-          } else if (updateData.status === 'completed') {
-            statusMessage = `Task completed: ${updated.title}`;
-          }
+          if (status === 'in-progress') statusMessage = `Task started: ${updatedTask.title}`;
+          else if (status === 'completed') statusMessage = `Task completed: ${updatedTask.title}`;
           
           if (statusMessage) {
             global.io.to(creatorSocketId).emit('taskStatusChanged', {
-              task: updated,
+              task: formattedTask,
               message: statusMessage,
-              oldStatus: originalTask.status,
-              newStatus: updateData.status,
               timestamp: new Date()
             });
-            console.log(`Status change notification sent to creator ${creatorId} via socket ${creatorSocketId}`);
           }
         }
       }
 
-      // Broadcast task update to all admins (for real-time updates in admin dashboard)
-      // This ensures admin views stay updated even if they're not the creator
       global.io.emit('taskUpdatedBroadcast', {
-        task: updated,
+        task: formattedTask,
         timestamp: new Date()
       });
     }
@@ -188,7 +217,7 @@ exports.updateTask = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Task updated successfully",
-      data: updated,
+      data: formattedTask,
     });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -198,23 +227,19 @@ exports.updateTask = async (req, res) => {
 // Delete Task
 exports.deleteTask = async (req, res) => {
   try {
-    // Get task details before deleting to notify the assigned employee
-    const taskToDelete = await Task.findById(req.params.id)
-      .populate("assignedTo", "email fullName");
+    const taskToDelete = await prisma.task.findUnique({
+      where: { id: req.params.id }
+    });
 
     if (!taskToDelete) {
       return res.status(404).json({ success: false, message: "Task not found" });
     }
 
-    const deleted = await Task.findByIdAndDelete(req.params.id);
-
-    if (!deleted) {
-      return res.status(404).json({ success: false, message: "Task not found" });
-    }
+    await prisma.task.delete({ where: { id: req.params.id } });
 
     // Emit socket event to notify the assigned employee
-    if (global.io && global.connectedUsers && taskToDelete.assignedTo) {
-      const assignedToId = taskToDelete.assignedTo._id?.toString() || taskToDelete.assignedTo.toString();
+    if (global.io && global.connectedUsers && taskToDelete.assignedToId) {
+      const assignedToId = taskToDelete.assignedToId;
       const socketId = global.connectedUsers.get(assignedToId);
       
       if (socketId) {
@@ -224,7 +249,6 @@ exports.deleteTask = async (req, res) => {
           message: `Task deleted: ${taskToDelete.title}`,
           timestamp: new Date()
         });
-        console.log(`Deletion notification sent to employee ${assignedToId} via socket ${socketId}`);
       }
     }
 
@@ -242,54 +266,56 @@ exports.getTasksByEmployee = async (req, res) => {
   try {
     const { employeeId } = req.params;
 
-    const tasks = await Task.find({ assignedTo: employeeId })
-      .populate("assignedTo", "email fullName")
-      .populate("createdBy", "email fullName");
+    const tasks = await prisma.task.findMany({
+      where: { assignedToId: employeeId },
+      include: {
+        assignedTo: userSelect,
+        createdBy: userSelect
+      },
+      orderBy: { createdAt: 'desc' }
+    });
 
-    if (!tasks) {
-      return res.status(404).json({ 
-        success: false, 
-        message: "No tasks found for this employee" 
-      });
+    if (!tasks || tasks.length === 0) {
+      return res.status(404).json({ success: false, message: "No tasks found for this employee" });
     }
 
     res.status(200).json({ 
       success: true, 
-      data: tasks,
+      data: tasks.map(formatTask),
       count: tasks.length,
     });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
 };
-// Get task statistics by employee
+
+// Get task statistics by employee (aggregation translation)
 exports.getTaskStatsByEmployee = async (req, res) => {
   try {
-    const stats = await Task.aggregate([
-      {
-        $group: {
-          _id: "$assignedTo",
-          pending: {
-            $sum: { $cond: [{ $eq: ["$status", "pending"] }, 1, 0] }
-          },
-          inProgress: {
-            $sum: { $cond: [{ $eq: ["$status", "in-progress"] }, 1, 0] }
-          },
-          completed: {
-            $sum: { $cond: [{ $eq: ["$status", "completed"] }, 1, 0] }
-          },
-          total: { $sum: 1 }
-        }
-      },
-      {
-        $lookup: {
-          from: "users",
-          localField: "_id",
-          foreignField: "_id",
-          as: "employee"
-        }
+    // 1. Get all employees
+    const users = await prisma.user.findMany({
+      where: { role: 'employee' },
+      include: {
+        tasksAssigned: { select: { status: true } }
       }
-    ]);
+    });
+
+    // 2. Map their stats
+    const stats = users.map(user => {
+      const tasks = user.tasksAssigned || [];
+      return {
+        _id: user.id,
+        pending: tasks.filter(t => t.status === 'pending').length,
+        inProgress: tasks.filter(t => t.status === 'in_progress').length,
+        completed: tasks.filter(t => t.status === 'completed').length,
+        total: tasks.length,
+        employee: [{ 
+          firstName: user.firstName, 
+          lastName: user.lastName, 
+          email: user.email 
+        }]
+      };
+    });
 
     res.status(200).json({ 
       success: true, 

@@ -1,0 +1,69 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  user
+  admin
+  employee
+}
+
+enum TaskStatus {
+  pending
+  in_progress @map("in-progress")
+  completed
+}
+
+enum Priority {
+  low
+  medium
+  high
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  firstName String   @map("first_name")
+  lastName  String   @map("last_name")
+  password  String
+  role      Role     @default(employee)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations: A user can create many tasks, and have many tasks assigned to them
+  tasksAssigned Task[] @relation("AssignedTasks")
+  tasksCreated  Task[] @relation("CreatedTasks")
+
+  @@map("users")
+}
+
+model Task {
+  id            String     @id @default(uuid())
+  title         String
+  description   String     @default("")
+  status        TaskStatus @default(pending)
+  priority      Priority   @default(medium)
+  deadline      DateTime?
+  
+  // Foreign Keys and Relations
+  assignedToId  String     @map("assigned_to_id")
+  assignedTo    User       @relation("AssignedTasks", fields: [assignedToId], references: [id], onDelete: Cascade)
+  
+  createdById   String     @map("created_by_id")
+  createdBy     User       @relation("CreatedTasks", fields: [createdById], references: [id], onDelete: Cascade)
+
+  startTime     DateTime?  @map("start_time")
+  completedTime DateTime?  @map("completed_time")
+  remark        String     @default("")
+  isDaily       Boolean    @default(false) @map("is_daily")
+
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
+
+  @@map("tasks")
+}
