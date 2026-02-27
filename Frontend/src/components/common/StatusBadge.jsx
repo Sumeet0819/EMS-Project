@@ -8,6 +8,7 @@ import { Badge } from "../ui/badge";
 const statusConfig = {
   "pending":     { variant: "warning",  label: "Pending" },
   "in-progress": { variant: "info",     label: "In Progress" },
+  "in_progress": { variant: "info",     label: "In Progress" },
   "completed":   { variant: "success",  label: "Completed" },
 };
 

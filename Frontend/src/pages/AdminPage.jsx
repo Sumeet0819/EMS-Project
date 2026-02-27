@@ -5,6 +5,8 @@ import Dashboard from "./Dashboard";
 import TeamManagement from "./TeamManagement";
 import TaskPage from "./TaskPage";
 
+import { useResponsiveSidebar } from "../hooks/useResponsive";
+
 const AdminPage = () => {
   const getInitialPage = () => {
     try {
@@ -19,25 +21,11 @@ const AdminPage = () => {
   };
 
   const [activePage, setActivePage] = useState(getInitialPage);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+  const { sidebarOpen, setSidebarOpen, isMobile } = useResponsiveSidebar();
 
   useEffect(() => {
     localStorage.setItem("adminActivePage", activePage);
   }, [activePage]);
-
-  // Handle responsive sidebar
-  useEffect(() => {
-    const handleResize = () => {
-      const mobile = window.innerWidth < 1024;
-      setIsMobile(mobile);
-      if (mobile) setSidebarOpen(false);
-      else setSidebarOpen(true);
-    };
-    
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
 
   const renderPage = () => {
     switch (activePage) {

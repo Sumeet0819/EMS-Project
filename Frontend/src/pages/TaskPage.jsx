@@ -196,26 +196,30 @@ const TaskPage = () => {
         }
       />
 
-      <div className="flex flex-col sm:flex-row gap-3 items-center bg-card p-2 rounded-lg border border-border">
-        <SearchBar 
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search by title, description, or assignee..."
-        />
-        <Select value={employeeFilter} onValueChange={setEmployeeFilter}>
-          <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder="All Employees" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Employees</SelectItem>
-            {employees.map((emp) => (
-              <SelectItem key={emp._id || emp.id} value={emp._id || emp.id}>
-                {emp.fullName?.firstName || emp.firstName} {emp.fullName?.lastName || emp.lastName}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <ViewToggle viewMode={viewMode} setViewMode={setViewMode} />
+      <div className="flex flex-col md:flex-row gap-3 items-center bg-card p-2 rounded-lg border border-border">
+        <div className="w-full md:flex-1">
+          <SearchBar 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search by title, description, or assignee..."
+          />
+        </div>
+        <div className="flex w-full md:w-auto items-center gap-2">
+          <Select value={employeeFilter} onValueChange={setEmployeeFilter}>
+            <SelectTrigger className="w-full md:w-[200px]">
+              <SelectValue placeholder="All Employees" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Employees</SelectItem>
+              {employees.map((emp) => (
+                <SelectItem key={emp._id || emp.id} value={emp._id || emp.id}>
+                  {emp.fullName?.firstName || emp.firstName} {emp.fullName?.lastName || emp.lastName}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <ViewToggle viewMode={viewMode} setViewMode={setViewMode} />
+        </div>
       </div>
 
       {filteredTasks.length === 0 ? (
@@ -232,42 +236,44 @@ const TaskPage = () => {
           }
         />
       ) : viewMode === 'list' ? (
-        <Card className="overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Title</TableHead>
-                <TableHead>Assigned To</TableHead>
-                <TableHead>Priority</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredTasks.map((task) => (
-                <TableRow key={task._id} onClick={() => { setSelectedTask(task); setShowDetailsModal(true); }}>
-                  <TableCell className="font-medium max-w-[200px] truncate">{task.title}</TableCell>
-                  <TableCell>
-                    {task.assignedTo?.fullName
-                      ? `${task.assignedTo.fullName.firstName} ${task.assignedTo.fullName.lastName}`
-                      : "Unassigned"}
-                  </TableCell>
-                  <TableCell><PriorityBadge priority={task.priority} /></TableCell>
-                  <TableCell><StatusBadge status={task.status} /></TableCell>
-                  <TableCell className="text-right">
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="text-destructive hover:bg-destructive/10"
-                      onClick={(e) => { e.stopPropagation(); setTaskToDelete(task); setIsDeleteDialogOpen(true); }}
-                    >
-                      <RiDeleteBinLine size={16} />
-                    </Button>
-                  </TableCell>
+        <Card className="overflow-hidden border-border/40 shadow-sm">
+          <div className="overflow-x-auto scrollbar-thin">
+            <Table>
+              <TableHeader className="bg-muted/30">
+                <TableRow>
+                  <TableHead className="min-w-[200px]">Title</TableHead>
+                  <TableHead className="min-w-[150px]">Assigned To</TableHead>
+                  <TableHead>Priority</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {filteredTasks.map((task) => (
+                  <TableRow key={task._id} onClick={() => { setSelectedTask(task); setShowDetailsModal(true); }} className="cursor-pointer hover:bg-muted/20 transition-colors">
+                    <TableCell className="font-medium max-w-[300px] truncate">{task.title}</TableCell>
+                    <TableCell className="whitespace-nowrap">
+                      {task.assignedTo?.fullName
+                        ? `${task.assignedTo.fullName.firstName} ${task.assignedTo.fullName.lastName}`
+                        : "Unassigned"}
+                    </TableCell>
+                    <TableCell><PriorityBadge priority={task.priority} /></TableCell>
+                    <TableCell><StatusBadge status={task.status} /></TableCell>
+                    <TableCell className="text-right">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="text-destructive hover:bg-destructive/10"
+                        onClick={(e) => { e.stopPropagation(); setTaskToDelete(task); setIsDeleteDialogOpen(true); }}
+                      >
+                        <RiDeleteBinLine size={16} />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">

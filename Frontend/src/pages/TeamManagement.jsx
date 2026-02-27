@@ -115,55 +115,59 @@ const TeamManagement = () => {
           }
         />
       ) : viewMode === 'list' ? (
-        <Card className="overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Employee</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredEmployees.map((emp) => (
-                <TableRow key={emp._id || emp.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <UserAvatar 
-                        firstName={emp.fullName?.firstName || emp.firstName} 
-                        lastName={emp.fullName?.lastName || emp.lastName} 
-                        size="sm"
-                      />
-                      <span className="font-medium">
-                        {emp.fullName?.firstName || emp.firstName} {emp.fullName?.lastName || emp.lastName}
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell>{emp.email}</TableCell>
-                  <TableCell>
-                    <Badge variant={emp.role === "admin" ? "default" : "secondary"}>
-                      {emp.role}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button 
-                      variant="ghost" size="icon" 
-                      onClick={() => { setSelectedEmployee(emp); setEditModalOpen(true); }}
-                    >
-                      <RiPencilLine size={16} />
-                    </Button>
-                    <Button 
-                      variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10"
-                      onClick={() => { setEmployeeToDelete(emp); setIsDeleteDialogOpen(true); }}
-                    >
-                      <RiDeleteBinLine size={16} />
-                    </Button>
-                  </TableCell>
+        <Card className="overflow-hidden border-border/40 shadow-sm">
+          <div className="overflow-x-auto scrollbar-thin">
+            <Table>
+              <TableHeader className="bg-muted/30">
+                <TableRow>
+                  <TableHead className="min-w-[180px]">Employee</TableHead>
+                  <TableHead className="min-w-[200px]">Email</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {filteredEmployees.map((emp) => (
+                  <TableRow key={emp._id || emp.id} className="hover:bg-muted/20 transition-colors">
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <UserAvatar 
+                          firstName={emp.fullName?.firstName || emp.firstName} 
+                          lastName={emp.fullName?.lastName || emp.lastName} 
+                          size="sm"
+                        />
+                        <span className="font-medium whitespace-nowrap">
+                          {emp.fullName?.firstName || emp.firstName} {emp.fullName?.lastName || emp.lastName}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="font-mono text-xs">{emp.email}</TableCell>
+                    <TableCell>
+                      <Badge variant={emp.role === "admin" ? "default" : "secondary"}>
+                        {emp.role}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button 
+                          variant="ghost" size="icon" 
+                          onClick={() => { setSelectedEmployee(emp); setEditModalOpen(true); }}
+                        >
+                          <RiPencilLine size={16} />
+                        </Button>
+                        <Button 
+                          variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10"
+                          onClick={() => { setEmployeeToDelete(emp); setIsDeleteDialogOpen(true); }}
+                        >
+                          <RiDeleteBinLine size={16} />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </Card>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">

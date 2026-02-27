@@ -8,9 +8,9 @@ import { cn } from "../../lib/utils";
  */
 const PageHeader = ({ title, subtitle, actions, className }) => {
   return (
-    <div className={cn("flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between", className)}>
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">{title}</h1>
+    <div className={cn("flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between", className)}>
+      <div className="space-y-1">
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">{title}</h1>
         {subtitle && (
           <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
         )}

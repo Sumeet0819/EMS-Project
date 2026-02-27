@@ -78,78 +78,81 @@ const CreateTask = ({ onCancel, onSubmit, employees: passedEmployees, preSelecte
             </DialogDescription>
           </DialogHeader>
 
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="title" className="text-right">Title</Label>
+          <div className="grid gap-5 py-4">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="title" className="text-left font-semibold">Title</Label>
               <Input
                 id="title"
                 name="title"
                 required
                 onChange={handleChange}
                 value={form.title}
-                className="col-span-3"
+                placeholder="Enter task title"
               />
             </div>
 
-            <div className="grid grid-cols-4 items-start gap-4">
-              <Label htmlFor="description" className="text-right mt-2">Description</Label>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="description" className="text-left font-semibold">Description</Label>
               <Textarea
                 id="description"
                 name="description"
                 onChange={handleChange}
                 value={form.description}
-                className="col-span-3 h-24"
+                className="h-24 md:h-32"
+                placeholder="Briefly describe the task"
               />
             </div>
 
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="assignedTo" className="text-right">Assign To</Label>
-              <Select
-                name="assignedTo"
-                value={form.assignedTo}
-                onValueChange={(val) => handleSelectChange("assignedTo", val)}
-                disabled={loading || employees.length === 0}
-                required
-              >
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder={loading ? "Loading..." : "Select employee"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {employees.map((emp) => (
-                    <SelectItem key={emp._id || emp.id} value={emp._id || emp.id}>
-                      {emp.fullName?.firstName || emp.firstName} {emp.fullName?.lastName || emp.lastName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="assignedTo" className="text-left font-semibold">Assign To</Label>
+                <Select
+                  name="assignedTo"
+                  value={form.assignedTo}
+                  onValueChange={(val) => handleSelectChange("assignedTo", val)}
+                  disabled={loading || employees.length === 0}
+                  required
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={loading ? "Loading..." : "Select employee"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {employees.map((emp) => (
+                      <SelectItem key={emp._id || emp.id} value={emp._id || emp.id}>
+                        {emp.fullName?.firstName || emp.firstName} {emp.fullName?.lastName || emp.lastName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="priority" className="text-left font-semibold">Priority</Label>
+                <Select
+                  name="priority"
+                  value={form.priority}
+                  onValueChange={(val) => handleSelectChange("priority", val)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Low</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="high">High</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="priority" className="text-right">Priority</Label>
-              <Select
-                name="priority"
-                value={form.priority}
-                onValueChange={(val) => handleSelectChange("priority", val)}
-              >
-                <SelectTrigger className="col-span-3">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="low">Low</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="high">High</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="status" className="text-right">Status</Label>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="status" className="text-left font-semibold">Status</Label>
               <Select
                 name="status"
                 value={form.status}
                 onValueChange={(val) => handleSelectChange("status", val)}
               >
-                <SelectTrigger className="col-span-3">
+                <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -160,16 +163,16 @@ const CreateTask = ({ onCancel, onSubmit, employees: passedEmployees, preSelecte
               </Select>
             </div>
 
-            <div className="flex items-center space-x-2 pt-2 ml-[88px]">
+            <div className="flex items-center space-x-2 pt-1">
               <input
                 type="checkbox"
                 id="isDaily"
                 name="isDaily"
                 checked={form.isDaily}
                 onChange={(e) => setForm({ ...form, isDaily: e.target.checked })}
-                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary accent-primary"
               />
-              <Label htmlFor="isDaily" className="font-normal cursor-pointer">
+              <Label htmlFor="isDaily" className="font-medium text-sm cursor-pointer opacity-80">
                 Mark as Daily Task (recurring)
               </Label>
             </div>

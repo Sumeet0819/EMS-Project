@@ -26,6 +26,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { RiTimeLine, RiTaskLine } from "@remixicon/react";
 import { toast } from "sonner";
 import { Badge } from "../components/ui/badge";
+import { useResponsiveSidebar } from "../hooks/useResponsive";
 
 const EmployeeDashboard = () => {
   const dispatch = useDispatch();
@@ -33,8 +34,7 @@ const EmployeeDashboard = () => {
   const { user } = useSelector((state) => state.userReducer);
 
   // Layout states
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+  const { sidebarOpen, setSidebarOpen, isMobile } = useResponsiveSidebar();
   const [activeTaskView, setActiveTaskView] = useState('daily');
   
   // Filter states
@@ -54,43 +54,6 @@ const EmployeeDashboard = () => {
   useEffect(() => {
     if (user?.id) dispatch(asyncLoadTasksByEmployee(user.id));
   }, [dispatch, user]);
-
-  useEffect(() => {
-    const handleResize = () => {
-      const mobile = window.innerWidth < 1024;
-      setIsMobile(mobile);
-      if (mobile) setSidebarOpen(false);
-      else setSidebarOpen(true);
-    };
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  // Socket logic
-  useEffect(() => {
-    if (!socket || !user?.id) return;
-    const handleTaskEvent = (data, isDelete=false) => {
-      const { task, taskId, message, taskTitle } = data;
-      if (isDelete) {
-        toast.info(message||"Task deleted", { description: taskTitle });
-        dispatch(deleteTask(taskId));
-        return;
-      }
-      const assignedToId = task?.assignedTo?._id || task?.assignedTo;
-      if (assignedToId && assignedToId.toString() === user.id.toString()) {
-        toast.success(message || `Task ${data.type || 'updated'}!`, { description: task.title });
-        dispatch(data.type === 'assigned' ? asyncLoadTasksByEmployee(user.id) : updateTask(task));
-      }
-    };
-
-    socket.on('taskAssigned', d => handleTaskEvent({...d, type: 'assigned'}));
-    socket.on('taskDeleted', d => handleTaskEvent(d, true));
-    socket.on('taskUpdated', d => handleTaskEvent(d));
-
-    return () => {
-      socket.off('taskAssigned'); socket.off('taskDeleted'); socket.off('taskUpdated');
-    };
-  }, [socket, user, dispatch]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -249,49 +212,53 @@ const EmployeeDashboard = () => {
               description="You do not have any tasks matching the current filters."
             />
           ) : (
-            <Card className="overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Task</TableHead>
-                    <TableHead>Priority</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Timer</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {displayTasks.map((task) => (
-                    <TableRow key={task._id} onClick={() => { setSelectedTask(task); setShowDetailsModal(true); }} className="cursor-pointer">
-                      <TableCell className="max-w-[250px]">
-                        <div className="font-semibold truncate">{task.title}</div>
-                        <div className="text-xs text-muted-foreground truncate">{task.description}</div>
-                      </TableCell>
-                      <TableCell><PriorityBadge priority={task.priority} /></TableCell>
-                      <TableCell><StatusBadge status={task.status} /></TableCell>
-                      <TableCell>
-                        {task.status === "in-progress" ? (
-                          <Badge variant="outline" className="font-mono text-primary border-primary/20 bg-primary/5">
-                            <RiTimeLine className="mr-1 h-3 w-3" />
-                            {task.startTime ? formatTime(Math.max(0, Math.floor((Date.now() - new Date(task.startTime).getTime()) / 1000))) : formatTime(task.timer || 0)}
-                          </Badge>
-                        ) : "-"}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {task.status === "pending" && (
-                          <Button size="sm" onClick={(e) => startTask(task._id, e)}>Start</Button>
-                        )}
-                        {task.status === "in-progress" && (
-                          <Button size="sm" variant="secondary" onClick={(e) => openSubmitModal(task._id, e)}>Submit</Button>
-                        )}
-                        {task.status === "completed" && (
-                          <Badge variant="secondary">Done</Badge>
-                        )}
-                      </TableCell>
+            <Card className="overflow-hidden border-border/40 shadow-sm">
+              <div className="overflow-x-auto scrollbar-thin">
+                <Table>
+                  <TableHeader className="bg-muted/30">
+                    <TableRow>
+                      <TableHead className="min-w-[200px]">Task</TableHead>
+                      <TableHead>Priority</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Timer</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {displayTasks.map((task) => (
+                      <TableRow key={task._id} onClick={() => { setSelectedTask(task); setShowDetailsModal(true); }} className="cursor-pointer hover:bg-muted/20 transition-colors">
+                        <TableCell className="max-w-[250px]">
+                          <div className="font-semibold truncate">{task.title}</div>
+                          <div className="text-xs text-muted-foreground truncate">{task.description}</div>
+                        </TableCell>
+                        <TableCell><PriorityBadge priority={task.priority} /></TableCell>
+                        <TableCell><StatusBadge status={task.status} /></TableCell>
+                        <TableCell>
+                          {task.status === "in-progress" ? (
+                            <Badge variant="outline" className="font-mono text-primary border-primary/20 bg-primary/5">
+                              <RiTimeLine className="mr-1 h-3 w-3" />
+                              {task.startTime ? formatTime(Math.max(0, Math.floor((Date.now() - new Date(task.startTime).getTime()) / 1000))) : formatTime(task.timer || 0)}
+                            </Badge>
+                          ) : "-"}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            {task.status === "pending" && (
+                              <Button size="sm" onClick={(e) => startTask(task._id, e)}>Start</Button>
+                            )}
+                            {task.status === "in-progress" && (
+                              <Button size="sm" variant="secondary" onClick={(e) => openSubmitModal(task._id, e)}>Submit</Button>
+                            )}
+                            {task.status === "completed" && (
+                              <Badge variant="secondary" className="bg-success/10 text-success border-success/20">Done</Badge>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </Card>
           )}
 
