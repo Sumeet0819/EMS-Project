@@ -7,9 +7,15 @@ import {
   updateTaskTimerLocal,
   asyncUpdateEmployeeTask,
 } from "../store/actions/employeeTaskActions";
+import { 
+  asyncLoadTodayLog, 
+  asyncStartDay, 
+  asyncStopDay 
+} from "../store/actions/workLogActions";
 import { deleteTask, updateTask } from "../store/reducers/employeeTaskSlice";
 import { useSocket } from "../contexts/SocketContext";
 import TaskEditor from "../components/common/TaskEditor";
+import EmployeeStats from "./EmployeeStats";
 import SearchBar from "../components/common/SearchBar";
 import AppSidebar from "../components/layout/AppSidebar";
 import AppHeader from "../components/layout/AppHeader";
@@ -32,6 +38,7 @@ const EmployeeDashboard = () => {
   const dispatch = useDispatch();
   const { tasks } = useSelector((state) => state.employeeTaskReducer);
   const { user } = useSelector((state) => state.userReducer);
+  const { todayLog } = useSelector((state) => state.employeeTaskReducer);
 
   // Layout states
   const { sidebarOpen, setSidebarOpen, isMobile } = useResponsiveSidebar();
@@ -52,20 +59,39 @@ const EmployeeDashboard = () => {
   const socket = useSocket();
 
   useEffect(() => {
-    if (user?.id) dispatch(asyncLoadTasksByEmployee(user.id));
+    if (user?.id) {
+      dispatch(asyncLoadTasksByEmployee(user.id));
+      dispatch(asyncLoadTodayLog());
+    }
   }, [dispatch, user]);
+
+  const [daySeconds, setDaySeconds] = useState(0);
+
+  useEffect(() => {
+    if (todayLog) {
+      setDaySeconds(todayLog.totalSeconds || 0);
+    }
+  }, [todayLog]);
 
   useEffect(() => {
     const interval = setInterval(() => {
+      // Update Daily Timer
+      if (todayLog?.isActive && todayLog.startTime) {
+        const elapsed = Math.floor((Date.now() - new Date(todayLog.startTime).getTime()) / 1000);
+        setDaySeconds((todayLog.totalSeconds || 0) + elapsed);
+      }
+
+      // Update Task Timers
       tasks.forEach((t) => {
-        if (t.status === "in-progress" && t.startTime) {
+        const isCurrentlyWorking = t.status === "in-progress" || t.status === "in_progress";
+        if (isCurrentlyWorking && t.startTime) {
           const elapsedSec = Math.max(0, Math.floor((Date.now() - new Date(t.startTime).getTime()) / 1000));
           dispatch(updateTaskTimerLocal(t._id, elapsedSec));
         }
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [tasks, dispatch]);
+  }, [tasks, dispatch, todayLog]);
 
   const displayTasks = useMemo(() => {
     let filteredTasks = activeTaskView === 'daily' ? tasks.filter(t => t.isDaily) : tasks.filter(t => !t.isDaily);
@@ -77,7 +103,10 @@ const EmployeeDashboard = () => {
       );
     }
     if (statusFilter !== 'all') {
-      filteredTasks = filteredTasks.filter(t => (t.status || 'pending') === statusFilter);
+      filteredTasks = filteredTasks.filter(t => {
+        const s = (t.status || 'pending').replace('_', '-');
+        return s === statusFilter;
+      });
     }
     if (priorityFilter !== 'all') {
       filteredTasks = filteredTasks.filter(t => (t.priority || 'medium') === priorityFilter);
@@ -109,10 +138,23 @@ const EmployeeDashboard = () => {
   };
 
   const formatTime = (sec) => {
+    if (!sec && sec !== 0) return "00:00:00";
     const h = Math.floor(sec / 3600);
     const m = Math.floor((sec % 3600) / 60);
     const s = sec % 60;
     return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  };
+
+  const handleStartDay = () => dispatch(asyncStartDay());
+  const handleStopDay = () => dispatch(asyncStopDay());
+
+  const calculateTaskSeconds = (task) => {
+    let total = task.totalTimeSpent || 0;
+    const isCurrentlyWorking = task.status === "in-progress" || task.status === "in_progress";
+    if (isCurrentlyWorking && task.startTime) {
+      total += Math.max(0, Math.floor((Date.now() - new Date(task.startTime).getTime()) / 1000));
+    }
+    return total;
   };
 
   const handleEditorSave = async (data) => {
@@ -150,59 +192,108 @@ const EmployeeDashboard = () => {
       </div>
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden text-foreground">
-        <AppHeader 
-          role="employee"
-          userName={user?.fullName?.firstName || "Employee"}
-          sidebarOpen={sidebarOpen}
-          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-        />
+          <AppHeader 
+            role="employee"
+            userName={user?.fullName?.firstName || "Employee"}
+            sidebarOpen={sidebarOpen}
+            onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+          />
 
-        {showDetailsModal && selectedTask ? (
-          <main className="flex-1 overflow-hidden p-4 md:p-6 lg:p-8">
-            <TaskEditor 
-              task={selectedTask}
-              mode="edit"
-              role="employee"
-              onSave={handleEditorSave}
-              onCancel={() => {
-                setShowDetailsModal(false);
-                setSelectedTask(null);
-              }}
-            />
-          </main>
-        ) : (
-          <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 space-y-6">
+          {activeTaskView === 'stats' ? (
+            <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
+              <EmployeeStats />
+            </main>
+          ) : showDetailsModal && selectedTask ? (
+            <main className="flex-1 overflow-hidden p-4 md:p-6 lg:p-8">
+              <TaskEditor 
+                task={selectedTask}
+                mode="edit"
+                role="employee"
+                onSave={handleEditorSave}
+                onCancel={() => {
+                  setShowDetailsModal(false);
+                  setSelectedTask(null);
+                }}
+              />
+            </main>
+          ) : (
+            <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 space-y-6">
           <PageHeader 
             title="My Tasks"
             subtitle={`Your assigned ${activeTaskView} tasks`}
+            actions={
+              <div className="flex items-center gap-3 bg-card p-1.5 rounded-xl border border-border shadow-sm">
+                <div className="px-3 py-1 flex flex-col items-center">
+                   <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-tighter">Day Time</span>
+                   <span className="text-xl font-mono font-bold text-primary">{formatTime(daySeconds)}</span>
+                </div>
+                {todayLog?.isActive ? (
+                  <Button variant="destructive" size="sm" onClick={handleStopDay} className="h-9 shadow-md flex items-center gap-2">
+                    <RiTimeLine size={16} /> Stop Day
+                  </Button>
+                ) : (
+                  <Button variant="default" size="sm" onClick={handleStartDay} className="h-9 shadow-md flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700">
+                    <RiTimeLine size={16} /> Start Day
+                  </Button>
+                )}
+              </div>
+            }
           />
 
-          <div className="flex flex-col sm:flex-row gap-3 items-center bg-card p-2 rounded-lg border border-border">
-            <SearchBar value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search tasks..." />
-            
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-[160px]">
-                <SelectValue placeholder="All Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="in-progress">In Progress</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+             <Card className="p-4 flex items-center justify-between border-border/40 bg-gradient-to-br from-primary/5 to-transparent">
+                <div>
+                   <p className="text-xs font-bold text-muted-foreground uppercase">Tasks Done</p>
+                   <p className="text-2xl font-bold">{tasks.filter(t => t.status === 'completed').length}</p>
+                </div>
+                <RiTaskLine className="text-primary/20" size={32} />
+             </Card>
+             <Card className="p-4 flex items-center justify-between border-border/40">
+                <div>
+                   <p className="text-xs font-bold text-muted-foreground uppercase">Pending</p>
+                   <p className="text-2xl font-bold text-orange-500">{tasks.filter(t => t.status === 'pending').length}</p>
+                </div>
+                <RiTimeLine className="text-orange-500/20" size={32} />
+             </Card>
+             <Card className="p-4 flex items-center justify-between border-border/40">
+                <div>
+                   <p className="text-xs font-bold text-muted-foreground uppercase">Target</p>
+                   <p className="text-2xl font-bold">{tasks.length}</p>
+                </div>
+                <RiTaskLine className="text-muted-foreground/20" size={32} />
+             </Card>
+          </div>
 
-            <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-              <SelectTrigger className="w-full sm:w-[160px]">
-                <SelectValue placeholder="All Priorities" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Priorities</SelectItem>
-                <SelectItem value="low">Low</SelectItem>
-                <SelectItem value="medium">Medium</SelectItem>
-                <SelectItem value="high">High</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center bg-card p-3 rounded-lg border border-border shadow-sm">
+            <div className="flex-1">
+              <SearchBar value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search tasks..." className="w-full" />
+            </div>
+            
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-full sm:w-[150px]">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="in-progress">In Progress</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+                <SelectTrigger className="w-full sm:w-[150px]">
+                  <SelectValue placeholder="Priority" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Priorities</SelectItem>
+                  <SelectItem value="low">Low</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {displayTasks.length === 0 ? (
@@ -232,12 +323,12 @@ const EmployeeDashboard = () => {
                           <div className="text-xs text-muted-foreground truncate">{task.description}</div>
                         </TableCell>
                         <TableCell><PriorityBadge priority={task.priority} /></TableCell>
-                        <TableCell><StatusBadge status={task.status} /></TableCell>
+                        <TableCell><StatusBadge status={task.status?.replace('_', '-')} /></TableCell>
                         <TableCell>
-                          {task.status === "in-progress" ? (
-                            <Badge variant="outline" className="font-mono text-primary border-primary/20 bg-primary/5">
+                          {(task.status === "in-progress" || task.status === "in_progress" || task.totalTimeSpent > 0) ? (
+                            <Badge variant="outline" className={`font-mono ${(task.status === 'in-progress' || task.status === 'in_progress') ? 'text-primary border-primary/20 bg-primary/5' : 'text-muted-foreground'}`}>
                               <RiTimeLine className="mr-1 h-3 w-3" />
-                              {task.startTime ? formatTime(Math.max(0, Math.floor((Date.now() - new Date(task.startTime).getTime()) / 1000))) : formatTime(task.timer || 0)}
+                              {formatTime(calculateTaskSeconds(task))}
                             </Badge>
                           ) : "-"}
                         </TableCell>
@@ -246,7 +337,7 @@ const EmployeeDashboard = () => {
                             {task.status === "pending" && (
                               <Button size="sm" onClick={(e) => startTask(task._id, e)}>Start</Button>
                             )}
-                            {task.status === "in-progress" && (
+                            {(task.status === "in-progress" || task.status === "in_progress") && (
                               <Button size="sm" variant="secondary" onClick={(e) => openSubmitModal(task._id, e)}>Submit</Button>
                             )}
                             {task.status === "completed" && (

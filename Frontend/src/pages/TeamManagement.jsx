@@ -92,13 +92,18 @@ const TeamManagement = () => {
         }
       />
 
-      <div className="flex flex-col sm:flex-row gap-3 items-center bg-card p-2 rounded-lg border border-border">
-        <SearchBar 
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search by name or email..."
-        />
-        <ViewToggle viewMode={viewMode} setViewMode={setViewMode} />
+      <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center bg-card p-3 rounded-lg border border-border shadow-sm">
+        <div className="flex-1">
+          <SearchBar 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search by name or email..."
+            className="w-full"
+          />
+        </div>
+        <div className="flex justify-end">
+          <ViewToggle viewMode={viewMode} setViewMode={setViewMode} />
+        </div>
       </div>
 
       {filteredEmployees.length === 0 ? (
@@ -120,8 +125,8 @@ const TeamManagement = () => {
             <Table>
               <TableHeader className="bg-muted/30">
                 <TableRow>
-                  <TableHead className="min-w-[180px]">Employee</TableHead>
-                  <TableHead className="min-w-[200px]">Email</TableHead>
+                  <TableHead className="min-w-[150px]">Employee</TableHead>
+                  <TableHead className="min-w-[150px]">Email</TableHead>
                   <TableHead>Role</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -129,37 +134,42 @@ const TeamManagement = () => {
               <TableBody>
                 {filteredEmployees.map((emp) => (
                   <TableRow key={emp._id || emp.id} className="hover:bg-muted/20 transition-colors">
-                    <TableCell>
+                    <TableCell className="py-3">
                       <div className="flex items-center gap-3">
                         <UserAvatar 
                           firstName={emp.fullName?.firstName || emp.firstName} 
                           lastName={emp.fullName?.lastName || emp.lastName} 
                           size="sm"
+                          className="hidden xs:flex"
                         />
-                        <span className="font-medium whitespace-nowrap">
+                        <span className="font-semibold text-sm whitespace-nowrap">
                           {emp.fullName?.firstName || emp.firstName} {emp.fullName?.lastName || emp.lastName}
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell className="font-mono text-xs">{emp.email}</TableCell>
+                    <TableCell className="font-mono text-[10px] md:text-xs">
+                       <span className="max-w-[120px] md:max-w-[200px] truncate block" title={emp.email}>
+                        {emp.email}
+                       </span>
+                    </TableCell>
                     <TableCell>
-                      <Badge variant={emp.role === "admin" ? "default" : "secondary"}>
+                      <Badge variant={emp.role === "admin" ? "default" : "secondary"} className="scale-90 md:scale-100">
                         {emp.role}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right py-3">
                       <div className="flex justify-end gap-1">
                         <Button 
-                          variant="ghost" size="icon" 
+                          variant="ghost" size="icon" className="h-8 w-8"
                           onClick={() => { setSelectedEmployee(emp); setEditModalOpen(true); }}
                         >
-                          <RiPencilLine size={16} />
+                          <RiPencilLine size={14} />
                         </Button>
                         <Button 
-                          variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10"
+                          variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10"
                           onClick={() => { setEmployeeToDelete(emp); setIsDeleteDialogOpen(true); }}
                         >
-                          <RiDeleteBinLine size={16} />
+                          <RiDeleteBinLine size={14} />
                         </Button>
                       </div>
                     </TableCell>

@@ -132,14 +132,40 @@ exports.updateTask = async (req, res) => {
     
     // Add startTime when status changes to in-progress
     if (status) {
-      // Prism enum requires replacing hyphens with underscores if mapped, but our Prisma Schema handles it implicitly.
-      // E.g 'in-progress' -> 'in_progress'. Wait, the value from req.body is 'in-progress'.
-      // In JS, Prisma enums are exact strings. In schema we used @map("in-progress") but the JS value is 'in_progress'.
-      updateData.status = status === "in-progress" ? "in_progress" : status;
+      const newStatus = status === "in-progress" ? "in_progress" : status;
+      updateData.status = newStatus;
       
-      if (status === "in-progress") {
+      // Calculate time spent if we're moving OUT of in-progress
+      if (originalTask.status === "in_progress" && newStatus !== "in_progress") {
+        if (originalTask.startTime) {
+          const duration = Math.floor((new Date() - new Date(originalTask.startTime)) / 1000);
+          updateData.totalTimeSpent = (originalTask.totalTimeSpent || 0) + duration;
+          updateData.startTime = null; // Clear start time as it's no longer running
+        }
+      }
+
+      // Set startTime if we're moving INTO in-progress
+      if (newStatus === "in_progress") {
         updateData.startTime = new Date();
-      } else if (status === "completed") {
+        
+        // AUTO-START DAY LOG if not started
+        try {
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const userId = originalTask.assignedToId;
+          
+          await prisma.dailyWorkLog.upsert({
+            where: { userId_date: { userId, date: today } },
+            update: { isActive: true, startTime: new Date() },
+            create: { userId, date: today, isActive: true, startTime: new Date() }
+          });
+        } catch (err) {
+          console.error("Failed to auto-start day log:", err);
+        }
+      } 
+      
+      // Set completedTime if we're moving INTO completed
+      if (newStatus === "completed") {
         updateData.completedTime = new Date();
       }
     }

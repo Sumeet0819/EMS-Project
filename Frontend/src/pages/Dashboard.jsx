@@ -214,7 +214,7 @@ const Dashboard = () => {
         
         <div className="flex items-center gap-3">
           <Select value={filter} onValueChange={setFilter}>
-            <SelectTrigger className="w-[140px] bg-card/50 backdrop-blur-sm border-primary/20">
+            <SelectTrigger className="w-[160px] bg-card/50 backdrop-blur-sm border-primary/20">
               <RiFilter3Line className="w-4 h-4 mr-2 text-primary" />
               <SelectValue placeholder="Period" />
             </SelectTrigger>
@@ -244,9 +244,9 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <div ref={reportRef} className="space-y-8 p-1">
+      <div ref={reportRef} className="space-y-6 md:space-y-8 p-1">
         {/* Stat Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard label="Total Employees" value={stats.totalEmployees} icon={<RiUserLine size={20}/>} />
           <StatCard label="Completion Rate" value={`${stats.completionRate}%`} icon={<RiCheckDoubleLine size={20}/>} />
           <StatCard label="Completed Today" value={stats.completedToday} icon={<RiCheckDoubleLine size={20}/>} />
@@ -255,17 +255,19 @@ const Dashboard = () => {
 
         {/* Charts Row */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card className="lg:col-span-2 border-border/40 shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <Card className="lg:col-span-2 border-border/40 shadow-sm overflow-hidden">
+            <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 gap-2">
               <div>
                 <CardTitle className="text-lg font-bold">Productivity Trend</CardTitle>
-                <CardDescription>Daily task completion and creation flow</CardDescription>
+                <CardDescription className="text-xs">Daily task completion and creation flow</CardDescription>
               </div>
-              <RiCalendarLine className="text-muted-foreground" size={20} />
+              <Badge variant="outline" className="hidden sm:flex text-[10px] uppercase font-bold tracking-tighter">
+                <RiCalendarLine className="mr-1 h-3 w-3" /> Real-time
+              </Badge>
             </CardHeader>
-            <CardContent className="h-[350px]">
+            <CardContent className="h-[250px] sm:h-[300px] md:h-[350px] w-full px-2">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorComp" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
@@ -277,11 +279,10 @@ const Dashboard = () => {
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
-                  <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                  <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                  <XAxis dataKey="name" stroke="#888888" fontSize={10} tickLine={false} axisLine={false} />
+                  <YAxis stroke="#888888" fontSize={10} tickLine={false} axisLine={false} />
                   <Tooltip 
-                    contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
-                    itemStyle={{ fontSize: '12px' }}
+                    contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '8px', fontSize: '10px' }}
                   />
                   <Area type="monotone" dataKey="completed" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorComp)" />
                   <Area type="monotone" dataKey="created" stroke="#3b82f6" strokeWidth={2} fillOpacity={1} fill="url(#colorCreated)" />
@@ -290,31 +291,31 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="border-border/40 shadow-sm">
+          <Card className="border-border/40 shadow-sm overflow-hidden">
             <CardHeader>
               <CardTitle className="text-lg font-bold">Status Distribution</CardTitle>
-              <CardDescription>Overall task landscape</CardDescription>
+              <CardDescription className="text-xs">Overall task landscape</CardDescription>
             </CardHeader>
-            <CardContent className="h-[350px] flex flex-col items-center justify-center">
-              <ResponsiveContainer width="100%" height="80%">
+            <CardContent className="h-[280px] sm:h-[320px] md:h-[350px] flex flex-col items-center justify-center p-2">
+              <ResponsiveContainer width="100%" height="75%">
                 <PieChart>
                   <Pie
                     data={statusDistribution}
                     cx="50%" cy="50%"
-                    innerRadius={60} outerRadius={80}
+                    innerRadius={45} outerRadius={65}
                     paddingAngle={5} dataKey="value"
                   >
                     {statusDistribution.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }} />
-                  <Legend verticalAlign="bottom" height={36}/>
+                  <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '8px', fontSize: '10px' }} />
+                  <Legend verticalAlign="bottom" height={36} iconSize={8} wrapperStyle={{ fontSize: '10px' }}/>
                 </PieChart>
               </ResponsiveContainer>
-              <div className="text-center mt-2">
-                <span className="text-2xl font-bold">{stats.total}</span>
-                <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Total Tasks</p>
+              <div className="text-center mt-4">
+                <span className="text-xl font-bold">{stats.total}</span>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Total Tasks</p>
               </div>
             </CardContent>
           </Card>

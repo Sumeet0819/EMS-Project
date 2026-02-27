@@ -3,7 +3,8 @@ import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import {
   RiDashboardLine, RiGroupLine, RiTaskLine,
-  RiLogoutBoxLine, RiCalendarCheckLine, RiFileList3Line
+  RiLogoutBoxLine, RiCalendarCheckLine, RiFileList3Line,
+  RiBarChartBoxLine
 } from "@remixicon/react";
 import { asyncLogoutuser } from "../../store/actions/userActions";
 import { Button } from "../ui/button";
@@ -26,8 +27,9 @@ const ADMIN_NAV = [
 ];
 
 const EMPLOYEE_NAV = [
-  { key: "daily",   label: "Daily Tasks",   icon: RiCalendarCheckLine },
-  { key: "regular", label: "Regular Tasks", icon: RiFileList3Line },
+  { key: 'daily', label: 'Daily Tasks', icon: RiCalendarCheckLine },
+  { key: 'regular', label: 'Regular Tasks', icon: RiTaskLine },
+  { key: 'stats', label: 'My Statistics', icon: RiBarChartBoxLine },
 ];
 
 const AppSidebar = ({

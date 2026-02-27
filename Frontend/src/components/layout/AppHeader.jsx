@@ -28,7 +28,7 @@ const AppHeader = ({
         className
       )}
     >
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 flex-shrink-0">
         <Button
           variant="ghost"
           size="icon"
@@ -36,14 +36,14 @@ const AppHeader = ({
           onClick={onToggleSidebar}
           aria-label="Toggle menu"
         >
-          {sidebarOpen ? <RiCloseLine size={20} /> : <RiMenuLine size={20} />}
+          {sidebarOpen ? <RiCloseLine size={18} /> : <RiMenuLine size={18} />}
         </Button>
-        <span className="text-sm font-medium text-muted-foreground hidden sm:block">
+        <span className="text-xs md:text-sm font-semibold text-muted-foreground hidden md:block truncate max-w-[150px]">
           {greeting}
         </span>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1 sm:gap-2">
         <Button
           variant="ghost"
           size="icon"
@@ -51,12 +51,14 @@ const AppHeader = ({
           onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
           title="Toggle Theme"
         >
-          {theme === 'dark' ? <RiSunLine size={18} /> : <RiMoonLine size={18} />}
+          {theme === 'dark' ? <RiSunLine size={16} /> : <RiMoonLine size={16} />}
         </Button>
         <Button variant="ghost" size="icon" className="h-8 w-8" title="Notifications">
-          <RiBellLine size={18} />
+          <RiBellLine size={16} />
         </Button>
-        <UserAvatar firstName={firstName} lastName={lastName} size="sm" />
+        <div className="ml-1">
+          <UserAvatar firstName={firstName} lastName={lastName} size="sm" />
+        </div>
       </div>
     </header>
   );

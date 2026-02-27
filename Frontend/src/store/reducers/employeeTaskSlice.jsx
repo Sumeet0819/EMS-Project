@@ -2,6 +2,7 @@ import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
   tasks: [],
+  todayLog: null,
   loading: false,
   error: null,
 };
@@ -10,6 +11,9 @@ const employeeTaskSlice = createSlice({
   name: "employeeTask",
   initialState,
   reducers: {
+    setTodayLog: (state, action) => {
+      state.todayLog = action.payload;
+    },
     // Load all tasks for an employee
     loadEmployeeTasks: (state, action) => {
       state.tasks = Array.isArray(action.payload) ? action.payload : [];
@@ -94,6 +98,7 @@ const employeeTaskSlice = createSlice({
 export default employeeTaskSlice.reducer;
 export const {
   loadEmployeeTasks,
+  setTodayLog,
   createTask,
   updateTask,
   deleteTask,

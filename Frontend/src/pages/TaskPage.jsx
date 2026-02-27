@@ -196,17 +196,18 @@ const TaskPage = () => {
         }
       />
 
-      <div className="flex flex-col md:flex-row gap-3 items-center bg-card p-2 rounded-lg border border-border">
-        <div className="w-full md:flex-1">
+      <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center bg-card p-3 rounded-lg border border-border shadow-sm">
+        <div className="flex-1">
           <SearchBar 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search by title, description, or assignee..."
+            className="w-full"
           />
         </div>
-        <div className="flex w-full md:w-auto items-center gap-2">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
           <Select value={employeeFilter} onValueChange={setEmployeeFilter}>
-            <SelectTrigger className="w-full md:w-[200px]">
+            <SelectTrigger className="w-full sm:w-[180px]">
               <SelectValue placeholder="All Employees" />
             </SelectTrigger>
             <SelectContent>
@@ -218,7 +219,9 @@ const TaskPage = () => {
               ))}
             </SelectContent>
           </Select>
-          <ViewToggle viewMode={viewMode} setViewMode={setViewMode} />
+          <div className="flex justify-end">
+            <ViewToggle viewMode={viewMode} setViewMode={setViewMode} />
+          </div>
         </div>
       </div>
 
@@ -241,17 +244,17 @@ const TaskPage = () => {
             <Table>
               <TableHeader className="bg-muted/30">
                 <TableRow>
-                  <TableHead className="min-w-[200px]">Title</TableHead>
+                  <TableHead className="min-w-[150px]">Title</TableHead>
                   <TableHead className="min-w-[150px]">Assigned To</TableHead>
-                  <TableHead>Priority</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead className="w-[120px]">Priority</TableHead>
+                  <TableHead className="w-[120px]">Status</TableHead>
+                  <TableHead className="text-right w-[80px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredTasks.map((task) => (
                   <TableRow key={task._id} onClick={() => { setSelectedTask(task); setShowDetailsModal(true); }} className="cursor-pointer hover:bg-muted/20 transition-colors">
-                    <TableCell className="font-medium max-w-[300px] truncate">{task.title}</TableCell>
+                    <TableCell className="font-semibold py-4 max-w-[200px] md:max-w-none truncate">{task.title}</TableCell>
                     <TableCell className="whitespace-nowrap">
                       {task.assignedTo?.fullName
                         ? `${task.assignedTo.fullName.firstName} ${task.assignedTo.fullName.lastName}`

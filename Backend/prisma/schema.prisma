@@ -16,6 +16,7 @@ enum Role {
 enum TaskStatus {
   pending
   in_progress @map("in-progress")
+  paused
   completed
 }
 
@@ -38,6 +39,7 @@ model User {
   // Relations: A user can create many tasks, and have many tasks assigned to them
   tasksAssigned Task[] @relation("AssignedTasks")
   tasksCreated  Task[] @relation("CreatedTasks")
+  workLogs      DailyWorkLog[]
 
   @@map("users")
 }
@@ -59,6 +61,7 @@ model Task {
 
   startTime     DateTime?  @map("start_time")
   completedTime DateTime?  @map("completed_time")
+  totalTimeSpent Int        @default(0) @map("total_time_spent") // total seconds spent on task
   remark        String     @default("")
   isDaily       Boolean    @default(false) @map("is_daily")
 
@@ -66,4 +69,18 @@ model Task {
   updatedAt     DateTime   @updatedAt @map("updated_at")
 
   @@map("tasks")
+}
+
+model DailyWorkLog {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime @default(now())
+  startTime DateTime? @map("start_time")
+  endTime   DateTime? @map("end_time")
+  totalSeconds Int    @default(0) @map("total_seconds")
+  isActive  Boolean  @default(false) @map("is_active")
+
+  @@unique([userId, date])
+  @@map("daily_work_logs")
 }
