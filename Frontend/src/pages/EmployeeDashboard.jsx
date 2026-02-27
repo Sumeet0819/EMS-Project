@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   asyncLoadTasksByEmployee,
   asyncStartTask,
+  asyncStopTask,
   asyncSubmitTask,
   updateTaskTimerLocal,
   asyncUpdateEmployeeTask,
@@ -67,31 +68,26 @@ const EmployeeDashboard = () => {
 
   const [daySeconds, setDaySeconds] = useState(0);
 
-  useEffect(() => {
-    if (todayLog) {
-      setDaySeconds(todayLog.totalSeconds || 0);
-    }
-  }, [todayLog]);
+  // Removed useEffect that syncs Day Time with 24h work log to prevent shift-timer flickering
 
   useEffect(() => {
     const interval = setInterval(() => {
-      // Update Daily Timer
-      if (todayLog?.isActive && todayLog.startTime) {
-        const elapsed = Math.floor((Date.now() - new Date(todayLog.startTime).getTime()) / 1000);
-        setDaySeconds((todayLog.totalSeconds || 0) + elapsed);
-      }
+      const now = new Date();
+      // Calculate 12-hour bucket boundary
+      const bucketStart = new Date(now);
+      bucketStart.setHours(now.getHours() < 12 ? 0 : 12, 0, 0, 0);
 
-      // Update Task Timers
-      tasks.forEach((t) => {
-        const isCurrentlyWorking = t.status === "in-progress" || t.status === "in_progress";
-        if (isCurrentlyWorking && t.startTime) {
-          const elapsedSec = Math.max(0, Math.floor((Date.now() - new Date(t.startTime).getTime()) / 1000));
-          dispatch(updateTaskTimerLocal(t._id, elapsedSec));
-        }
-      });
+      // UI will re-calculate task seconds in real-time using calculateTaskSeconds
+
+      // Calculate Daily Total from Task Times (within the last 12-hour bucket)
+      const total = tasks.reduce((acc, t) => {
+        return acc + calculateTaskSeconds(t);
+      }, 0);
+
+      setDaySeconds(total);
     }, 1000);
     return () => clearInterval(interval);
-  }, [tasks, dispatch, todayLog]);
+  }, [tasks, dispatch]);
 
   const displayTasks = useMemo(() => {
     let filteredTasks = activeTaskView === 'daily' ? tasks.filter(t => t.isDaily) : tasks.filter(t => !t.isDaily);
@@ -116,25 +112,29 @@ const EmployeeDashboard = () => {
 
   const startTask = async (id, e) => {
     e.stopPropagation();
-    try { await dispatch(asyncStartTask(id)); toast.success("Task started successfully"); }
+    try { 
+      await dispatch(asyncStartTask(id)); 
+      // Always ensure the day log is active if a task starts
+      if (!todayLog?.isActive) {
+        await dispatch(asyncStartDay());
+      }
+      toast.success("Task started successfully"); 
+    }
     catch (err) { toast.error("Failed to start task: " + err.message); }
   };
 
-  const openSubmitModal = (id, e) => {
+  const stopTask = async (id, e) => {
     e.stopPropagation();
-    setTaskToSubmit(id);
-    setRemarkText("");
-    setShowRemarkModal(true);
-  };
-
-  const handleSubmitWithRemark = async (e) => {
-    e.preventDefault();
-    try {
-      await dispatch(asyncSubmitTask(taskToSubmit, remarkText));
-      toast.success("Task submitted successfully");
-      setShowRemarkModal(false);
-      setTaskToSubmit(null);
-    } catch (err) { toast.error("Failed to submit task: " + err.message); }
+    try { 
+      await dispatch(asyncStopTask(id)); 
+      // Stop day log ONLY if no other tasks are running
+      const otherRunning = tasks.some(t => t._id !== id && (t.status === 'in-progress' || t.status === 'in_progress'));
+      if (!otherRunning) {
+        await dispatch(asyncStopDay());
+      }
+      toast.success("Task stopped successfully"); 
+    }
+    catch (err) { toast.error("Failed to stop task: " + err.message); }
   };
 
   const formatTime = (sec) => {
@@ -145,16 +145,31 @@ const EmployeeDashboard = () => {
     return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
   };
 
-  const handleStartDay = () => dispatch(asyncStartDay());
-  const handleStopDay = () => dispatch(asyncStopDay());
 
   const calculateTaskSeconds = (task) => {
-    let total = task.totalTimeSpent || 0;
-    const isCurrentlyWorking = task.status === "in-progress" || task.status === "in_progress";
-    if (isCurrentlyWorking && task.startTime) {
-      total += Math.max(0, Math.floor((Date.now() - new Date(task.startTime).getTime()) / 1000));
+    if (!task) return 0;
+    const now = new Date();
+    const bucketStart = new Date(now);
+    bucketStart.setHours(now.getHours() < 12 ? 0 : 12, 0, 0, 0);
+
+    // Reset logic: if lastResetTime is before this bucket, shiftTimeSpent is ignored
+    const lastReset = task.lastResetTime ? new Date(task.lastResetTime) : new Date(0);
+    const totalInShift = lastReset >= bucketStart ? (task.shiftTimeSpent || 0) : 0;
+
+    const isRunning = task.status === "in-progress" || task.status === "in_progress";
+    
+    if (isRunning && task.startTime) {
+      const taskStart = new Date(task.startTime);
+      // Clip start time to bucket boundary
+      const effectiveStart = taskStart > bucketStart ? taskStart : bucketStart;
+      const elapsed = Math.max(0, Math.floor((now - effectiveStart) / 1000));
+      
+      // If task started before this bucket, we ignore previous bucket's shiftTimeSpent
+      if (taskStart < bucketStart) return elapsed;
+      return totalInShift + elapsed;
     }
-    return total;
+
+    return totalInShift;
   };
 
   const handleEditorSave = async (data) => {
@@ -210,6 +225,21 @@ const EmployeeDashboard = () => {
                 mode="edit"
                 role="employee"
                 onSave={handleEditorSave}
+                onStart={(id) => startTask(id, { stopPropagation: () => {} })}
+                onStop={(id) => stopTask(id, { stopPropagation: () => {} })}
+                onSubmit={async (id, remark) => {
+                  try {
+                    await dispatch(asyncSubmitTask(id, remark));
+                    // Check if other tasks are running before stopping day
+                    const otherRunning = tasks.some(t => t._id !== id && (t.status === 'in-progress' || t.status === 'in_progress'));
+                    if (!otherRunning) {
+                      await dispatch(asyncStopDay());
+                    }
+                    toast.success("Task submitted successfully");
+                    setShowDetailsModal(false);
+                    setSelectedTask(null);
+                  } catch (err) { toast.error("Failed to submit task: " + err.message); }
+                }}
                 onCancel={() => {
                   setShowDetailsModal(false);
                   setSelectedTask(null);
@@ -222,21 +252,17 @@ const EmployeeDashboard = () => {
             title="My Tasks"
             subtitle={`Your assigned ${activeTaskView} tasks`}
             actions={
-              <div className="flex items-center gap-3 bg-card p-1.5 rounded-xl border border-border shadow-sm">
-                <div className="px-3 py-1 flex flex-col items-center">
-                   <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-tighter">Day Time</span>
-                   <span className="text-xl font-mono font-bold text-primary">{formatTime(daySeconds)}</span>
-                </div>
-                {todayLog?.isActive ? (
-                  <Button variant="destructive" size="sm" onClick={handleStopDay} className="h-9 shadow-md flex items-center gap-2">
-                    <RiTimeLine size={16} /> Stop Day
-                  </Button>
-                ) : (
-                  <Button variant="default" size="sm" onClick={handleStartDay} className="h-9 shadow-md flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700">
-                    <RiTimeLine size={16} /> Start Day
-                  </Button>
-                )}
-              </div>
+           <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 px-4 py-2 bg-background border border-border/60 rounded-xl shadow-sm">
+            <div className={`h-2.5 w-2.5 rounded-full ${todayLog?.isActive ? 'bg-emerald-500 animate-pulse' : 'bg-muted-foreground/30'}`} />
+            <div className="flex flex-col">
+              <span className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground/70">Day Time</span>
+              <span className="text-lg font-mono font-black text-foreground tabular-nums tracking-tight">
+                {formatTime(daySeconds)}
+              </span>
+            </div>
+          </div>
+        </div>
             }
           />
 
@@ -325,20 +351,30 @@ const EmployeeDashboard = () => {
                         <TableCell><PriorityBadge priority={task.priority} /></TableCell>
                         <TableCell><StatusBadge status={task.status?.replace('_', '-')} /></TableCell>
                         <TableCell>
-                          {(task.status === "in-progress" || task.status === "in_progress" || task.totalTimeSpent > 0) ? (
-                            <Badge variant="outline" className={`font-mono ${(task.status === 'in-progress' || task.status === 'in_progress') ? 'text-primary border-primary/20 bg-primary/5' : 'text-muted-foreground'}`}>
-                              <RiTimeLine className="mr-1 h-3 w-3" />
-                              {formatTime(calculateTaskSeconds(task))}
-                            </Badge>
-                          ) : "-"}
+                          {(() => {
+                            const shiftSec = calculateTaskSeconds(task);
+                            const isRunning = task.status === "in-progress" || task.status === "in_progress";
+                            if (isRunning || shiftSec > 0) {
+                              return (
+                                <Badge variant="outline" className={`font-mono ${isRunning ? 'text-primary border-primary/20 bg-primary/5' : 'text-muted-foreground'}`}>
+                                  <RiTimeLine className="mr-1 h-3 w-3" />
+                                  {formatTime(shiftSec)}
+                                </Badge>
+                              );
+                            }
+                            return "-";
+                          })()}
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
-                            {task.status === "pending" && (
-                              <Button size="sm" onClick={(e) => startTask(task._id, e)}>Start</Button>
+                            {(task.status === "pending" || task.status === "pending") && (
+                              <Button size="sm" onClick={(e) => startTask(task._id, e)} className="bg-emerald-600 hover:bg-emerald-700">Start</Button>
                             )}
                             {(task.status === "in-progress" || task.status === "in_progress") && (
-                              <Button size="sm" variant="secondary" onClick={(e) => openSubmitModal(task._id, e)}>Submit</Button>
+                              <>
+                                <Button size="sm" variant="outline" onClick={(e) => stopTask(task._id, e)} className="border-orange-500 text-orange-600 hover:bg-orange-50 shadow-sm">Stop</Button>
+                                <Button size="sm" onClick={(e) => { e.stopPropagation(); setSelectedTask(task); setShowDetailsModal(true); }} className="bg-emerald-600 hover:bg-emerald-700">Submit</Button>
+                              </>
                             )}
                             {task.status === "completed" && (
                               <Badge variant="secondary" className="bg-success/10 text-success border-success/20">Done</Badge>
@@ -357,29 +393,6 @@ const EmployeeDashboard = () => {
         )}
       </div>
 
-      <Dialog open={showRemarkModal} onOpenChange={setShowRemarkModal}>
-        <DialogContent>
-          <form onSubmit={handleSubmitWithRemark}>
-            <DialogHeader>
-              <DialogTitle>Submit Task</DialogTitle>
-              <DialogDescription>Add a remark detailing the work completed.</DialogDescription>
-            </DialogHeader>
-            <div className="py-4">
-              <Textarea
-                placeholder="Enter your remark here..."
-                value={remarkText}
-                onChange={(e) => setRemarkText(e.target.value)}
-                required
-                rows={5}
-              />
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setShowRemarkModal(false)}>Cancel</Button>
-              <Button type="submit" disabled={!remarkText.trim()}>Submit Task</Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

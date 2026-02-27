@@ -135,18 +135,51 @@ exports.updateTask = async (req, res) => {
       const newStatus = status === "in-progress" ? "in_progress" : status;
       updateData.status = newStatus;
       
+      const now = new Date();
+      // Calculate 12-hour bucket boundary
+      const bucketStart = new Date(now);
+      bucketStart.setHours(now.getHours() < 12 ? 0 : 12, 0, 0, 0);
+
       // Calculate time spent if we're moving OUT of in-progress
       if (originalTask.status === "in_progress" && newStatus !== "in_progress") {
         if (originalTask.startTime) {
-          const duration = Math.floor((new Date() - new Date(originalTask.startTime)) / 1000);
+          const taskStart = new Date(originalTask.startTime);
+          const duration = Math.floor((now - taskStart) / 1000);
           updateData.totalTimeSpent = (originalTask.totalTimeSpent || 0) + duration;
+          
+          // Calculate shift-specific time (only duration within current bucket)
+          let currentShiftDuration = 0;
+          if (taskStart >= bucketStart) {
+            // Task started within this bucket
+            currentShiftDuration = duration;
+          } else {
+            // Task started in previous bucket - only count time from bucket start
+            currentShiftDuration = Math.floor((now - bucketStart) / 1000);
+          }
+
+          // If lastResetTime was before this bucket, start shiftTimeSpent from 0
+          const lastReset = originalTask.lastResetTime ? new Date(originalTask.lastResetTime) : new Date(0);
+          if (lastReset < bucketStart) {
+            updateData.shiftTimeSpent = Math.max(0, currentShiftDuration);
+          } else {
+            updateData.shiftTimeSpent = (originalTask.shiftTimeSpent || 0) + Math.max(0, currentShiftDuration);
+          }
+          
+          updateData.lastResetTime = now;
           updateData.startTime = null; // Clear start time as it's no longer running
         }
       }
 
       // Set startTime if we're moving INTO in-progress
       if (newStatus === "in_progress") {
-        updateData.startTime = new Date();
+        updateData.startTime = now;
+        
+        // Reset shiftTimeSpent if it's a new bucket
+        const lastReset = originalTask.lastResetTime ? new Date(originalTask.lastResetTime) : new Date(0);
+        if (lastReset < bucketStart) {
+          updateData.shiftTimeSpent = 0;
+          updateData.lastResetTime = now;
+        }
         
         // AUTO-START DAY LOG if not started
         try {
@@ -246,6 +279,7 @@ exports.updateTask = async (req, res) => {
       data: formattedTask,
     });
   } catch (error) {
+    console.error("Error in updateTask:", error);
     res.status(500).json({ success: false, error: error.message });
   }
 };

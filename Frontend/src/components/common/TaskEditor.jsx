@@ -4,8 +4,9 @@ import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Textarea } from "../ui/textarea";
-import { RiArrowLeftLine, RiSave3Line, RiCheckboxCircleLine } from "@remixicon/react";
+import { RiArrowLeftLine, RiSave3Line, RiCheckboxCircleLine, RiPlayFill, RiStopFill, RiSendPlane2Line } from "@remixicon/react";
 import { Badge } from "../ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "../ui/dialog";
 
 /**
  * TaskEditor
@@ -19,6 +20,9 @@ const TaskEditor = ({
   employees = [],
   onSave,
   onCancel,
+  onStart,
+  onStop,
+  onSubmit,
 }) => {
   const [form, setForm] = useState({
     title: "",
@@ -43,6 +47,48 @@ const TaskEditor = ({
       });
     }
   }, [task]);
+
+  const [seconds, setSeconds] = useState(0);
+
+  useEffect(() => {
+    const now = new Date();
+    const bucketStart = new Date(now);
+    bucketStart.setHours(now.getHours() < 12 ? 0 : 12, 0, 0, 0);
+
+    const calcSeconds = () => {
+      if (!task) return 0;
+      const now = new Date();
+      const bucketStart = new Date(now);
+      bucketStart.setHours(now.getHours() < 12 ? 0 : 12, 0, 0, 0);
+
+      const lastReset = task.lastResetTime ? new Date(task.lastResetTime) : new Date(0);
+      const totalInShift = lastReset >= bucketStart ? (task.shiftTimeSpent || 0) : 0;
+
+      const isRunning = (form.status === "in-progress" || form.status === "in_progress");
+      
+      if (isRunning && task.startTime) {
+        const taskStart = new Date(task.startTime);
+        const effectiveStart = taskStart > bucketStart ? taskStart : bucketStart;
+        const elapsed = Math.max(0, Math.floor((now - effectiveStart) / 1000));
+        
+        if (taskStart < bucketStart) return elapsed;
+        return totalInShift + elapsed;
+      }
+      return totalInShift;
+    };
+
+    const interval = setInterval(() => {
+      setSeconds(calcSeconds());
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [form.status, task]);
+
+  const formatTime = (sec) => {
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = sec % 60;
+    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  };
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
   const handleSelectChange = (name, value) => setForm({ ...form, [name]: value });
@@ -79,12 +125,58 @@ const TaskEditor = ({
                 )}
               </div>
             </div>
-            {!isViewOnly && (
-              <Button type="submit" size="sm" className="gap-2 font-semibold shadow-md">
-                <RiSave3Line size={16} className="hidden xs:block" />
-                {mode === 'create' ? 'Create' : 'Save'}
-              </Button>
-            )}
+            <div className="flex items-center gap-2">
+              {role === "employee" && ((form.status === "in-progress" || form.status === "in_progress") || seconds > 0) && (
+                <div className="flex items-center gap-2 px-3 py-1 bg-primary/10 border border-primary/20 rounded-full mr-2">
+                  <div className={`h-2 w-2 rounded-full ${(form.status === 'in-progress' || form.status === 'in_progress') ? 'bg-emerald-500 animate-pulse' : 'bg-muted-foreground/40'}`} />
+                  <span className="text-xs font-mono font-bold text-primary">
+                    {formatTime(seconds)}
+                  </span>
+                </div>
+              )}
+
+              {role === "employee" && mode === "edit" && (
+                <div className="flex items-center gap-2 mr-2 border-r pr-2 border-border/60">
+                  {form.status === "pending" ? (
+                    <Button 
+                      type="button" 
+                      size="sm" 
+                      onClick={() => onStart && onStart(task?._id || task?.id)}
+                      className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 h-8 text-[11px] font-bold"
+                    >
+                      <RiPlayFill size={14} /> Start Task
+                    </Button>
+                  ) : (form.status === "in-progress" || form.status === "in_progress") ? (
+                    <>
+                      <Button 
+                        type="button" 
+                        variant="outline"
+                        size="sm" 
+                        onClick={() => onStop && onStop(task?._id || task?.id)}
+                        className="gap-1.5 h-8 text-[11px] font-bold border-orange-500 text-orange-600 hover:bg-orange-50"
+                      >
+                        <RiStopFill size={14} /> Stop
+                      </Button>
+                      <Button 
+                        type="button" 
+                        size="sm" 
+                        onClick={() => onSubmit && onSubmit(task?._id || task?.id, form.remark)}
+                        className="gap-1.5 h-8 text-[11px] font-bold bg-accent hover:bg-accent/90 text-accent-foreground shadow-md"
+                      >
+                        <RiSendPlane2Line size={14} /> Submit Task
+                      </Button>
+                    </>
+                  ) : null}
+                </div>
+              )}
+              
+              {!isViewOnly && (
+                <Button type="submit" size="sm" className="gap-2 font-semibold shadow-md h-8 text-[11px]">
+                  <RiSave3Line size={16} className="hidden xs:block" />
+                  {mode === 'create' ? 'Create' : 'Save'}
+                </Button>
+              )}
+            </div>
           </div>
 
           {/* Form Fields Area */}

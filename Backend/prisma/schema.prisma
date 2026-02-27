@@ -62,6 +62,8 @@ model Task {
   startTime     DateTime?  @map("start_time")
   completedTime DateTime?  @map("completed_time")
   totalTimeSpent Int        @default(0) @map("total_time_spent") // total seconds spent on task
+  shiftTimeSpent Int        @default(0) @map("shift_time_spent") // total seconds spent in current 12hr shift
+  lastResetTime DateTime?  @map("last_reset_time")
   remark        String     @default("")
   isDaily       Boolean    @default(false) @map("is_daily")
 

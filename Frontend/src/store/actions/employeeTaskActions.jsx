@@ -79,7 +79,23 @@ export const asyncDeleteEmployeeTask = (taskId) => async (dispatch, getState) =>
 // Start a task (status: in-progress)
 export const asyncStartTask = (taskId) => async (dispatch, getState) => {
   try {
+    dispatch(startTask(taskId)); // Optimistic local update
     const updatedTask = { status: "in-progress" };
+    const { data } = await axios.put(`/tasks/${taskId}`, updatedTask);
+    dispatch(updateTask(data.data)); // Sync with server result
+    dispatch(setError(null));
+    return data;
+  } catch (error) {
+    console.log(error);
+    dispatch(setError(error.message));
+    throw error;
+  }
+};
+
+// Stop/Pause a task (status: pending)
+export const asyncStopTask = (taskId) => async (dispatch, getState) => {
+  try {
+    const updatedTask = { status: "pending" };
     const { data } = await axios.put(`/tasks/${taskId}`, updatedTask);
     dispatch(updateTask(data.data));
     dispatch(setError(null));
@@ -94,9 +110,10 @@ export const asyncStartTask = (taskId) => async (dispatch, getState) => {
 // Submit a task (status: completed)
 export const asyncSubmitTask = (taskId, remark = "") => async (dispatch, getState) => {
   try {
+    dispatch(submitTask(taskId)); // Optimistic local update
     const updatedTask = { status: "completed", remark };
     const { data } = await axios.put(`/tasks/${taskId}`, updatedTask);
-    dispatch(updateTask(data.data));
+    dispatch(updateTask(data.data)); // Sync with server result
     dispatch(setError(null));
     return data;
   } catch (error) {

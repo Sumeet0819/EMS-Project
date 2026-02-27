@@ -57,7 +57,7 @@ const employeeTaskSlice = createSlice({
       );
       if (task) {
         task.status = "in-progress";
-        task.startTime = new Date();
+        task.startTime = new Date().toISOString();
       }
     },
 
@@ -68,7 +68,7 @@ const employeeTaskSlice = createSlice({
       );
       if (task) {
         task.status = "completed";
-        task.completedTime = new Date();
+        task.completedTime = new Date().toISOString();
       }
     },
 
