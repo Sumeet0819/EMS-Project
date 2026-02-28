@@ -8,7 +8,7 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Button } from "./ui/button";
 import { toast } from "sonner";
-import { RiLoader4Line } from "@remixicon/react";
+import { RiLoader4Line, RiEyeLine, RiEyeOffLine, RiRefreshLine } from "@remixicon/react";
 
 /**
  * CreateEmployee Modal
@@ -23,6 +23,16 @@ const CreateEmployee = ({ onClose }) => {
     email: "",
     password: "default123",
   });
+  const [showPassword, setShowPassword] = useState(false);
+
+  const generatePassword = () => {
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+    let newPassword = "";
+    for (let i = 0; i < 12; i++) {
+      newPassword += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setForm((prev) => ({ ...prev, password: newPassword }));
+  };
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -93,15 +103,36 @@ const CreateEmployee = ({ onClose }) => {
 
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="password" className="text-right">Password</Label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                placeholder="default123"
-                value={form.password}
-                onChange={handleChange}
-                className="col-span-3"
-              />
+              <div className="col-span-3 flex gap-2">
+                <div className="relative flex-1">
+                  <Input
+                    id="password"
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Enter password"
+                    value={form.password}
+                    onChange={handleChange}
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                  >
+                    {showPassword ? <RiEyeOffLine size={18} /> : <RiEyeLine size={18} />}
+                  </button>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="shrink-0"
+                  onClick={generatePassword}
+                  title="Generate Random Password"
+                >
+                  <RiRefreshLine size={18} />
+                </Button>
+              </div>
             </div>
           </div>
 

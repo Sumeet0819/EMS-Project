@@ -114,6 +114,8 @@ exports.getTaskById = async (req, res) => {
 // Update Task
 exports.updateTask = async (req, res) => {
   try {
+    console.log("UpdateTask Request Body:", JSON.stringify(req.body, null, 2));
+    console.log("UpdateTask Params:", req.params);
     const { status, remark, assignedTo, title, description, priority, deadline } = req.body;
     
     // Get the original task to check if assignedTo changed
