@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   asyncLoadEmployeeTasks,
@@ -7,30 +7,28 @@ import {
   asyncDeleteEmployeeTask,
 } from "../store/actions/employeeTaskActions";
 import { asyncLoadEmployees } from "../store/actions/employeeActions";
-import { updateTask, deleteTask } from "../store/reducers/employeeTaskSlice";
-import { useSocket } from "../contexts/SocketContext";
+
 import TaskEditor from "../components/common/TaskEditor";
 import { RiDeleteBinLine, RiPencilLine, RiAddLine, RiTaskLine } from "@remixicon/react";
 import { toast } from "sonner";
 import SearchBar from "../components/common/SearchBar";
 import ViewToggle from "../components/common/ViewToggle";
+import { FixedSizeList as List } from 'react-window';
 import StatusBadge from "../components/common/StatusBadge";
 import PriorityBadge from "../components/common/PriorityBadge";
 import PageHeader from "../components/common/PageHeader";
 import EmptyState from "../components/common/EmptyState";
 import ConfirmDialog from "../components/common/ConfirmDialog";
+import { useTaskFilters } from "../hooks/useTaskFilters";
+import { useTaskSocket } from "../hooks/useTaskSocket";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "../components/ui/dialog";
-import { Input } from "../components/ui/input";
-import { Label } from "../components/ui/label";
-import { Textarea } from "../components/ui/textarea";
+
 
 const TaskPage = () => {
   const dispatch = useDispatch();
-  const socket = useSocket();
   const { tasks } = useSelector((state) => state.employeeTaskReducer);
   const { employees } = useSelector((state) => state.employeeReducer);
 
@@ -40,50 +38,37 @@ const TaskPage = () => {
   
   // Edit State
   const [isEditMode, setIsEditMode] = useState(false);
-  const [editForm, setEditForm] = useState({ title: "", description: "", assignedTo: "", priority: "medium", status: "pending" });
+
   
   // Delete State
   const [taskToDelete, setTaskToDelete] = useState(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
-  // Filter State
-  const [employeeFilter, setEmployeeFilter] = useState("all");
-  const [viewMode, setViewMode] = useState('list'); // 'list' or 'grid'
-  const [searchQuery, setSearchQuery] = useState("");
+  // Custom Hooks
+  const {
+    searchQuery,
+    setSearchQuery,
+    employeeFilter,
+    setEmployeeFilter,
+    viewMode,
+    setViewMode,
+    filteredTasks
+  } = useTaskFilters(tasks);
+
+  useTaskSocket({
+    selectedTask,
+    isEditMode,
+    onTaskDeleted: () => {
+      setSelectedTask(null);
+      setShowDetailsModal(false);
+    },
+    onTaskUpdated: (updatedTask) => setSelectedTask(updatedTask)
+  });
 
   useEffect(() => {
     dispatch(asyncLoadEmployeeTasks());
     dispatch(asyncLoadEmployees());
   }, [dispatch]);
-
-  // Socket setup omitted for brevity but logic remains active in the container
-  useEffect(() => {
-    if (!socket) return;
-    const handleEvents = (event, action, isDelete = false) => {
-      socket.on(event, (data) => {
-        dispatch(action(isDelete ? data.taskId : data.task));
-        if (selectedTask && !isEditMode) {
-          if (isDelete && selectedTask._id === data.taskId) {
-            setSelectedTask(null);
-            setShowDetailsModal(false);
-          } else if (!isDelete && selectedTask._id === data.task._id) {
-            setSelectedTask(data.task);
-          }
-        }
-      });
-    };
-    handleEvents('taskUpdatedBroadcast', updateTask);
-    handleEvents('taskStatusChanged', updateTask);
-    handleEvents('taskUpdated', updateTask);
-    handleEvents('taskDeleted', deleteTask, true);
-
-    return () => {
-      socket.off('taskUpdatedBroadcast');
-      socket.off('taskStatusChanged');
-      socket.off('taskUpdated');
-      socket.off('taskDeleted');
-    };
-  }, [socket, dispatch, selectedTask, isEditMode]);
 
   const handleCreateTask = async (newTask) => {
     try {
@@ -91,7 +76,7 @@ const TaskPage = () => {
       dispatch(asyncLoadEmployeeTasks());
       setShowCreateModal(false);
       toast.success("Task Created Successfully");
-    } catch (error) {
+    } catch {
       toast.error("Failed to create task");
     }
   };
@@ -103,7 +88,7 @@ const TaskPage = () => {
       toast.success("Task updated successfully");
       setIsEditMode(false);
       setSelectedTask(null);
-    } catch (error) {
+    } catch {
       toast.error("Failed to update task");
     }
   };
@@ -115,46 +100,14 @@ const TaskPage = () => {
       toast.success("Task deleted successfully");
       setIsDeleteDialogOpen(false);
       setTaskToDelete(null);
-    } catch (error) {
+    } catch {
       toast.error("Failed to delete task");
     }
   };
 
-  const openEditModal = (task, e) => {
-    e.stopPropagation();
-    setSelectedTask(task);
-    setEditForm({
-      title: task.title || "",
-      description: task.description || "",
-      assignedTo: task.assignedTo?._id || task.assignedTo || "",
-      priority: task.priority || "medium",
-      status: task.status || "pending",
-    });
-    setIsEditMode(true);
-  };
 
-  const filteredTasks = useMemo(() => {
-    return (tasks || []).filter((task) => {
-      // Employee filter
-      if (employeeFilter !== "all" && employeeFilter !== "") {
-        const assignedToId = task.assignedTo?._id || task.assignedTo;
-        if (assignedToId !== employeeFilter) return false;
-      }
 
-      // Search filter
-      if (!searchQuery) return true;
-      const query = searchQuery.toLowerCase();
-      const title = (task.title || "").toLowerCase();
-      const desc = (task.description || "").toLowerCase();
-      
-      let assigneeName = "";
-      if (task.assignedTo?.fullName) {
-        assigneeName = `${task.assignedTo.fullName.firstName || ''} ${task.assignedTo.fullName.lastName || ''}`.toLowerCase();
-      }
-      
-      return title.includes(query) || desc.includes(query) || assigneeName.includes(query);
-    });
-  }, [tasks, employeeFilter, searchQuery]);
+
 
   if (showCreateModal) {
     return (
@@ -252,28 +205,43 @@ const TaskPage = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredTasks.map((task) => (
-                  <TableRow key={task._id} onClick={() => { setSelectedTask(task); setShowDetailsModal(true); }} className="cursor-pointer hover:bg-muted/20 transition-colors">
-                    <TableCell className="font-semibold py-4 max-w-[200px] md:max-w-none truncate">{task.title}</TableCell>
-                    <TableCell className="whitespace-nowrap">
-                      {task.assignedTo?.fullName
-                        ? `${task.assignedTo.fullName.firstName} ${task.assignedTo.fullName.lastName}`
-                        : "Unassigned"}
-                    </TableCell>
-                    <TableCell><PriorityBadge priority={task.priority} /></TableCell>
-                    <TableCell><StatusBadge status={task.status} /></TableCell>
-                    <TableCell className="text-right">
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="text-destructive hover:bg-destructive/10"
-                        onClick={(e) => { e.stopPropagation(); setTaskToDelete(task); setIsDeleteDialogOpen(true); }}
+                <List
+                  height={600} // The height of the scrolling window
+                  itemCount={filteredTasks.length}
+                  itemSize={65} // Example height of a table row
+                  width="100%"
+                >
+                  {({ index, style }) => {
+                    const task = filteredTasks[index];
+                    return (
+                      <TableRow 
+                        key={task._id} 
+                        style={style}
+                        onClick={() => { setSelectedTask(task); setShowDetailsModal(true); }} 
+                        className="cursor-pointer hover:bg-muted/20 transition-colors flex items-center justify-between border-b"
                       >
-                        <RiDeleteBinLine size={16} />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                        <TableCell className="font-semibold py-4 min-w-[150px] max-w-[200px] md:max-w-none truncate">{task.title}</TableCell>
+                        <TableCell className="whitespace-nowrap min-w-[150px] truncate">
+                          {task.assignedTo?.fullName
+                            ? `${task.assignedTo.fullName.firstName} ${task.assignedTo.fullName.lastName}`
+                            : "Unassigned"}
+                        </TableCell>
+                        <TableCell className="w-[120px]"><PriorityBadge priority={task.priority} /></TableCell>
+                        <TableCell className="w-[120px]"><StatusBadge status={task.status} /></TableCell>
+                        <TableCell className="text-right w-[80px]">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="text-destructive hover:bg-destructive/10"
+                            onClick={(e) => { e.stopPropagation(); setTaskToDelete(task); setIsDeleteDialogOpen(true); }}
+                          >
+                            <RiDeleteBinLine size={16} />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  }}
+                </List>
               </TableBody>
             </Table>
           </div>

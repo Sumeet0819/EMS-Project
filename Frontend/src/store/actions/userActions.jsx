@@ -1,9 +1,9 @@
-import { useNavigate } from "react-router-dom";
+
 import axios from "../../utils/axiosconfig";
 import { loaduser, clearUser } from "../reducers/userSlice";
 
 
-export const asyncRegisterUser = (employee) => async (dispatch, getState) => {
+export const asyncRegisterUser = (employee) => async (dispatch) => {
   try {
     const { data } = await axios.post("/auth/register", employee);
     localStorage.setItem("employee", JSON.stringify(data.employee));
@@ -15,7 +15,7 @@ export const asyncRegisterUser = (employee) => async (dispatch, getState) => {
   }
 };
 
-export const asyncCurrentuser = () => async (dispatch, getstate) => {
+export const asyncCurrentuser = () => async (dispatch) => {
   try {
     const employee = localStorage.getItem("employee");
     if (employee && employee !== "" && employee !== "null") {
@@ -30,7 +30,7 @@ export const asyncCurrentuser = () => async (dispatch, getstate) => {
   }
 };
 
-export const asyncLogoutuser = () => async (dispatch, getstate) => {
+export const asyncLogoutuser = () => async (dispatch) => {
   try {
     localStorage.removeItem("employee");
     localStorage.removeItem("adminActivePage"); // Clear saved page on logout
@@ -41,7 +41,7 @@ export const asyncLogoutuser = () => async (dispatch, getstate) => {
 };
 
 
-export const asyncLoginuser = (credentials, navigate) => async (dispatch, getState) => {
+export const asyncLoginuser = (credentials, navigate) => async (dispatch) => {
   try {
     const { data } = await axios.post("/auth/login", credentials);
     
@@ -77,7 +77,7 @@ export const asyncLoginuser = (credentials, navigate) => async (dispatch, getSta
 };
 
 
-export const asyncUpdateuser = (id, employee) => async (dispatch, getState) => {
+export const asyncUpdateuser = (id, employee) => async (dispatch) => {
   try {
     const { data } = await axios.put(`/auth/${id}`, employee);
     localStorage.setItem("employee", JSON.stringify(employee));
@@ -89,7 +89,7 @@ export const asyncUpdateuser = (id, employee) => async (dispatch, getState) => {
   }
 };
 
-export const asyncDeleteuser = (id) => async (dispatch, getState) => {
+export const asyncDeleteuser = (id) => async () => {
   try {
     await axios.delete(`/auth/${id}`);
     localStorage.removeItem("employee");

@@ -12,7 +12,7 @@ import {
 } from "../reducers/employeeTaskSlice";
 
 // Load all tasks
-export const asyncLoadEmployeeTasks = () => async (dispatch, getState) => {
+export const asyncLoadEmployeeTasks = () => async (dispatch) => {
   try {
     dispatch(setLoading(true));
     const { data } = await axios.get("/tasks");
@@ -27,7 +27,7 @@ export const asyncLoadEmployeeTasks = () => async (dispatch, getState) => {
 };
 
 // Create a new task - Admin only
-export const asyncCreateEmployeeTask = (task) => async (dispatch, getState) => {
+export const asyncCreateEmployeeTask = (task) => async (dispatch) => {
   try {
     dispatch(setLoading(true));
     const { data } = await axios.post("/tasks", task);
@@ -44,7 +44,7 @@ export const asyncCreateEmployeeTask = (task) => async (dispatch, getState) => {
 };
 
 // Update an existing task
-export const asyncUpdateEmployeeTask = (taskId, updatedTask) => async (dispatch, getState) => {
+export const asyncUpdateEmployeeTask = (taskId, updatedTask) => async (dispatch) => {
   try {
     dispatch(setLoading(true));
     const { data } = await axios.put(`/tasks/${taskId}`, updatedTask);
@@ -61,7 +61,7 @@ export const asyncUpdateEmployeeTask = (taskId, updatedTask) => async (dispatch,
 };
 
 // Delete a task
-export const asyncDeleteEmployeeTask = (taskId) => async (dispatch, getState) => {
+export const asyncDeleteEmployeeTask = (taskId) => async (dispatch) => {
   try {
     dispatch(setLoading(true));
     await axios.delete(`/tasks/${taskId}`);
@@ -77,7 +77,7 @@ export const asyncDeleteEmployeeTask = (taskId) => async (dispatch, getState) =>
 };
 
 // Start a task (status: in-progress)
-export const asyncStartTask = (taskId) => async (dispatch, getState) => {
+export const asyncStartTask = (taskId) => async (dispatch) => {
   try {
     dispatch(startTask(taskId)); // Optimistic local update
     const updatedTask = { status: "in-progress" };
@@ -93,7 +93,7 @@ export const asyncStartTask = (taskId) => async (dispatch, getState) => {
 };
 
 // Stop/Pause a task (status: pending)
-export const asyncStopTask = (taskId) => async (dispatch, getState) => {
+export const asyncStopTask = (taskId) => async (dispatch) => {
   try {
     const updatedTask = { status: "pending" };
     const { data } = await axios.put(`/tasks/${taskId}`, updatedTask);
@@ -108,7 +108,7 @@ export const asyncStopTask = (taskId) => async (dispatch, getState) => {
 };
 
 // Submit a task (status: completed)
-export const asyncSubmitTask = (taskId, remark = "") => async (dispatch, getState) => {
+export const asyncSubmitTask = (taskId, remark = "") => async (dispatch) => {
   try {
     dispatch(submitTask(taskId)); // Optimistic local update
     const updatedTask = { status: "completed", remark };
@@ -124,12 +124,12 @@ export const asyncSubmitTask = (taskId, remark = "") => async (dispatch, getStat
 };
 
 // Update task timer (locally only)
-export const updateTaskTimerLocal = (taskId, timer) => (dispatch, getState) => {
+export const updateTaskTimerLocal = (taskId, timer) => (dispatch) => {
   dispatch(updateTaskTimer({ id: taskId, timer }));
 };
 
 // Get tasks for specific employee
-export const asyncLoadTasksByEmployee = (employeeId) => async (dispatch, getState) => {
+export const asyncLoadTasksByEmployee = (employeeId) => async (dispatch) => {
   try {
     dispatch(setLoading(true));
     const { data } = await axios.get(`/tasks/employee/${employeeId}`);
@@ -144,7 +144,7 @@ export const asyncLoadTasksByEmployee = (employeeId) => async (dispatch, getStat
 };
 
 // Get task statistics by employee
-export const asyncLoadTaskStats = () => async (dispatch, getState) => {
+export const asyncLoadTaskStats = () => async (dispatch) => {
   try {
     dispatch(setLoading(true));
     const { data } = await axios.get("/tasks/stats/all");

@@ -9,7 +9,7 @@ import {
 } from "../reducers/employeeSlice";
 
 // Load all employees
-export const asyncLoadEmployees = () => async (dispatch, getState) => {
+export const asyncLoadEmployees = () => async (dispatch) => {
   try {
     dispatch(setLoading(true));
     const { data } = await axios.get("/employees");
@@ -27,7 +27,7 @@ export const asyncLoadEmployees = () => async (dispatch, getState) => {
 };
 
 // Create a new employee - Default role as "employee"
-export const asyncCreateEmployee = (employee) => async (dispatch, getState) => {
+export const asyncCreateEmployee = (employee) => async (dispatch) => {
   try {
     dispatch(setLoading(true));
     const employeeData = {
@@ -54,7 +54,7 @@ export const asyncCreateEmployee = (employee) => async (dispatch, getState) => {
 };
 
 // Update an existing employee
-export const asyncUpdateEmployee = (updatedEmployee) => async (dispatch, getState) => {
+export const asyncUpdateEmployee = (updatedEmployee) => async (dispatch) => {
   try {
     dispatch(setLoading(true));
     const { data } = await axios.put(`/employees/${updatedEmployee._id}`, updatedEmployee);
@@ -70,7 +70,7 @@ export const asyncUpdateEmployee = (updatedEmployee) => async (dispatch, getStat
 };
 
 // Delete an employee
-export const asyncDeleteEmployee = (employeeId) => async (dispatch, getState) => {
+export const asyncDeleteEmployee = (employeeId) => async (dispatch) => {
   try {
     dispatch(setLoading(true));
     await axios.delete(`/employees/${employeeId}`);

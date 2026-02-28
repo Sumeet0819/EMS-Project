@@ -37,8 +37,6 @@ const AppSidebar = ({
   activePage,
   onNavigate,
   userName = "",
-  onCollapse,
-  isOpen = true,
   className,
 }) => {
   const dispatch = useDispatch();
@@ -51,7 +49,6 @@ const AppSidebar = ({
     navigate("/");
   };
 
-  const [firstName, lastName] = userName.split(" ");
 
   return (
     <aside

@@ -48,7 +48,7 @@ const TeamManagement = () => {
       toast.success("Employee deleted successfully");
       setIsDeleteDialogOpen(false);
       setEmployeeToDelete(null);
-    } catch (error) {
+    } catch {
       toast.error("Failed to delete employee");
     }
   };
