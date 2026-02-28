@@ -3,6 +3,7 @@ const router = express.Router();
 const prisma = require("../db/prisma");
 const authMiddleware = require("../middleware/auth.middleware");
 const bcrypt = require("bcryptjs");
+const sendEmail = require("../utils/sendEmail");
 
 // Helper to format Prisma User to Frontend expected format
 function formatEmployee(emp) {
@@ -92,7 +93,8 @@ router.post("/", async (req, res) => {
       });
     }
 
-    const hashPassword = await bcrypt.hash(password || "default123", 10);
+    const passwordToSend = password || "default123";
+    const hashPassword = await bcrypt.hash(passwordToSend, 10);
 
     const employee = await prisma.user.create({
       data: {
@@ -103,6 +105,29 @@ router.post("/", async (req, res) => {
         role: "employee", // Default role
       },
       select: employeeSelect
+    });
+
+    // Send welcome email asynchronously
+    const emailHtml = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+        <div style="background-color: #4CAF50; padding: 20px; text-align: center; color: white;">
+          <h2 style="margin: 0;">Welcome to the Team, ${firstName}!</h2>
+        </div>
+        <div style="padding: 20px; color: #333; line-height: 1.6;">
+          <p>Hello ${firstName} ${lastName},</p>
+          <p>Your account has been successfully created. We are excited to have you on board!</p>
+          <p>Please log in to the platform to get started.</p>
+        </div>
+        <div style="background-color: #f1f1f1; padding: 15px; text-align: center; font-size: 0.8em; color: #777;">
+          <p style="margin: 0;">This is an automated message, please do not reply.</p>
+        </div>
+      </div>
+    `;
+
+    sendEmail({
+      to: email,
+      subject: "Welcome to the Platform - Your Remote Account Credentials",
+      html: emailHtml
     });
 
     res.status(201).json({

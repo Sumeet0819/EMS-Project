@@ -1,4 +1,5 @@
 const prisma = require("../db/prisma");
+const sendEmail = require("../utils/sendEmail");
 
 // Helper to map Prisma models to the shape the React Frontend expects (Mongoose shape)
 function formatTask(task) {
@@ -63,6 +64,37 @@ exports.createTask = async (req, res) => {
       } else {
         console.log(`Employee ${assignedToId} is not connected`);
       }
+    }
+
+    // Send email notification asynchronously
+    if (task.assignedTo && task.assignedTo.email) {
+      const emailHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+          <div style="background-color: #2196F3; padding: 20px; text-align: center; color: white;">
+            <h2 style="margin: 0;">New Task Assigned</h2>
+          </div>
+          <div style="padding: 20px; color: #333; line-height: 1.6;">
+            <p>Hello ${task.assignedTo.firstName || 'Team Member'},</p>
+            <p>A new task has been assigned to you by ${task.createdBy ? task.createdBy.firstName : 'Admin'}.</p>
+            <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; border-left: 4px solid #2196F3; margin: 20px 0;">
+              <h3 style="margin-top: 0; color: #2196F3;">${title}</h3>
+              <p><strong>Priority:</strong> <span style="text-transform: capitalize;">${priority || 'Medium'}</span></p>
+              ${deadline ? `<p><strong>Deadline:</strong> ${new Date(deadline).toLocaleDateString()}</p>` : ''}
+              ${description ? `<p style="margin-top: 10px;"><strong>Description:</strong><br/>${description.replace(/\n/g, '<br/>')}</p>` : ''}
+            </div>
+            <p>Please log in to the platform to view more details and start working on it.</p>
+          </div>
+          <div style="background-color: #f1f1f1; padding: 15px; text-align: center; font-size: 0.8em; color: #777;">
+            <p style="margin: 0;">This is an automated message, please do not reply.</p>
+          </div>
+        </div>
+      `;
+
+      sendEmail({
+        to: task.assignedTo.email,
+        subject: `New Task Assigned: ${title}`,
+        html: emailHtml
+      });
     }
 
     res.status(201).json({

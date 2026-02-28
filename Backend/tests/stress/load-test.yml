@@ -1,0 +1,67 @@
+config:
+  target: "http://localhost:3000"
+  phases:
+    - duration: 30
+      arrivalRate: 1
+      rampTo: 30
+      name: "Ramp up phase"
+    - duration: 60
+      arrivalRate: 30
+      name: "Sustained load phase"
+  
+  # Load the generated users
+  payload:
+    path: "users.csv"
+    fields:
+      - "email"
+      - "password"
+      - "id"
+    order: sequence
+    
+scenarios:
+  - name: "Employee Daily Workflow"
+    flow:
+      # 1. Login
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "{{ email }}"
+            password: "{{ password }}"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+      
+      - think: 2 # Simulate reading the dashboard
+
+      # 2. Fetch Tasks (Simulating Dashboard Load)
+      - get:
+          url: "/api/tasks/employee/{{ id }}"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          capture:
+            - json: "$.data[0]._id"
+              as: "firstTaskId"
+
+      - think: 3 # Simulate looking at a task
+
+      # 3. Update a Task Status (if they have one)
+      - put:
+          ifTrue: "firstTaskId"
+          url: "/api/tasks/{{ firstTaskId }}"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            status: "in-progress"
+            remark: "Started working on this during stress test"
+
+      - think: 5 # Simulate working
+
+      # 4. Update it back to pending so the test can be rerun easily
+      - put:
+          ifTrue: "firstTaskId"
+          url: "/api/tasks/{{ firstTaskId }}"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            status: "pending"
+            remark: "Paused work"
