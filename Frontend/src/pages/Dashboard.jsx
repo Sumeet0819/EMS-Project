@@ -19,6 +19,7 @@ import { useSocket } from "../contexts/SocketContext";
 
 import StatCard from "../components/StatCard";
 import ActivityList from "../components/ActivityList";
+import AnnouncementWidget from "../components/common/AnnouncementWidget";
 import PageHeader from "../components/common/PageHeader";
 import { DashboardSkeleton } from "../components/Loader";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card";
@@ -322,8 +323,9 @@ const Dashboard = () => {
         </div>
 
         {/* Operational Flow Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <ActivityList data={activity} />
+          <AnnouncementWidget />
           
           <Card className="border-border/40 shadow-sm">
             <CardHeader>

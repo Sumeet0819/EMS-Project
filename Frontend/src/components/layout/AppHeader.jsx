@@ -4,6 +4,7 @@ import { Button } from "../ui/button";
 import UserAvatar from "../common/UserAvatar";
 import { cn } from "../../lib/utils";
 import { useTheme } from "../ThemeProvider";
+import NotificationBell from "./NotificationBell";
 
 /**
  * Role-aware AppHeader
@@ -53,9 +54,7 @@ const AppHeader = ({
         >
           {theme === 'dark' ? <RiSunLine size={16} /> : <RiMoonLine size={16} />}
         </Button>
-        <Button variant="ghost" size="icon" className="h-8 w-8" title="Notifications">
-          <RiBellLine size={16} />
-        </Button>
+        <NotificationBell />
         <div className="ml-1">
           <UserAvatar firstName={firstName} lastName={lastName} size="sm" />
         </div>

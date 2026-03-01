@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import {
   RiDashboardLine, RiGroupLine, RiTaskLine,
   RiLogoutBoxLine, RiCalendarCheckLine, RiFileList3Line,
-  RiBarChartBoxLine
+  RiBarChartBoxLine, RiMessage3Line
 } from "@remixicon/react";
 import { asyncLogoutuser } from "../../store/actions/userActions";
 import { Button } from "../ui/button";
@@ -24,12 +24,14 @@ const ADMIN_NAV = [
   { key: "dashboard", label: "Dashboard",       icon: RiDashboardLine },
   { key: "team",      label: "Team Management", icon: RiGroupLine },
   { key: "task",      label: "Task Management", icon: RiTaskLine },
+  { key: "chat",      label: "Communications",  icon: RiMessage3Line },
 ];
 
 const EMPLOYEE_NAV = [
-  { key: 'daily', label: 'Daily Tasks', icon: RiCalendarCheckLine },
+  { key: 'daily',  label: 'Daily Tasks',   icon: RiCalendarCheckLine },
   { key: 'regular', label: 'Regular Tasks', icon: RiTaskLine },
-  { key: 'stats', label: 'My Statistics', icon: RiBarChartBoxLine },
+  { key: 'stats',  label: 'My Statistics', icon: RiBarChartBoxLine },
+  { key: 'chat',   label: 'Communications', icon: RiMessage3Line },
 ];
 
 const AppSidebar = ({
@@ -38,6 +40,7 @@ const AppSidebar = ({
   onNavigate,
   userName = "",
   className,
+  chatUnread = 0,
 }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -82,6 +85,11 @@ const AppSidebar = ({
           >
             <Icon size={18} />
             <span>{label}</span>
+            {key === 'chat' && chatUnread > 0 && (
+              <span className="ml-auto bg-red-500 text-white text-[9px] font-bold min-w-[18px] h-[18px] flex items-center justify-center rounded-full px-1">
+                {chatUnread > 99 ? '99+' : chatUnread}
+              </span>
+            )}
           </button>
         ))}
       </nav>

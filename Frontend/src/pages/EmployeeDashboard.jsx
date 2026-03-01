@@ -34,12 +34,20 @@ import { RiTimeLine, RiTaskLine } from "@remixicon/react";
 import { toast } from "sonner";
 import { Badge } from "../components/ui/badge";
 import { useResponsiveSidebar } from "../hooks/useResponsive";
+import ChatPage from "../components/common/ChatPage";
+import ChatUnreadListener from "../components/common/ChatUnreadListener";
 
 const EmployeeDashboard = () => {
   const dispatch = useDispatch();
   const { tasks } = useSelector((state) => state.employeeTaskReducer);
   const { user } = useSelector((state) => state.userReducer);
   const { todayLog } = useSelector((state) => state.employeeTaskReducer);
+  const conversations = useSelector(s => s.messageReducer.conversations);
+  const chatChannels  = useSelector(s => s.channelReducer.channels);
+  const chatUnread = useMemo(() =>
+    conversations.reduce((a, c) => a + (c.unreadCount || 0), 0) +
+    chatChannels.reduce((a, c)  => a + (c.unreadCount || 0), 0)
+  , [conversations, chatChannels]);
 
   // Layout states
   const { sidebarOpen, setSidebarOpen, isMobile } = useResponsiveSidebar();
@@ -193,11 +201,15 @@ const EmployeeDashboard = () => {
         <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
       )}
 
+      {/* Always-on chat unread listener */}
+      <ChatUnreadListener />
+
       {/* Sidebar */}
       <div className={`fixed inset-y-0 left-0 z-50 w-64 transform transition-all duration-300 ease-in-out lg:relative ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:-ml-64"}`}>
         <AppSidebar
           role="employee"
           activePage={activeTaskView}
+          chatUnread={chatUnread}
           onNavigate={(page) => {
             setActiveTaskView(page);
             if (isMobile) setSidebarOpen(false);
@@ -209,7 +221,7 @@ const EmployeeDashboard = () => {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden text-foreground">
           <AppHeader 
             role="employee"
-            userName={user?.fullName?.firstName || "Employee"}
+            userName={`${user?.fullName?.firstName || ""} ${user?.fullName?.lastName || ""}`.trim() || "Employee"}
             sidebarOpen={sidebarOpen}
             onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
           />
@@ -217,6 +229,10 @@ const EmployeeDashboard = () => {
           {activeTaskView === 'stats' ? (
             <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
               <EmployeeStats />
+            </main>
+          ) : activeTaskView === 'chat' ? (
+            <main className="flex-1 overflow-hidden p-4">
+              <ChatPage />
             </main>
           ) : showDetailsModal && selectedTask ? (
             <main className="flex-1 overflow-hidden p-4 md:p-6 lg:p-8">

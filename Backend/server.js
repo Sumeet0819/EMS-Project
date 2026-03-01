@@ -34,6 +34,22 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Handle joining specific chat channels (Socket Rooms)
+  socket.on('join_channel', (channelId) => {
+     if (channelId) {
+        socket.join(`channel_${channelId}`);
+        console.log(`Socket ${socket.id} joined channel_${channelId}`);
+     }
+  });
+
+  // Handle joining multiple channels (e.g. on login/refresh)
+  socket.on('join_channels', (channelIds) => {
+     if (Array.isArray(channelIds)) {
+        channelIds.forEach(id => socket.join(`channel_${id}`));
+        console.log(`Socket ${socket.id} joined ${channelIds.length} channels`);
+     }
+  });
+
   // Handle disconnection
   socket.on('disconnect', () => {
     // Remove user from connectedUsers map

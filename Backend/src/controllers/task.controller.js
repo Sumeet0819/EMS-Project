@@ -49,6 +49,17 @@ exports.createTask = async (req, res) => {
 
     const formattedTask = formatTask(task);
 
+    // Save notification in database
+    await prisma.notification.create({
+      data: {
+        userId: task.assignedToId,
+        title: 'New Task Assigned',
+        message: task.title,
+        type: 'TASK_ASSIGNED',
+        link: '/employee-dashboard'
+      }
+    });
+
     // Emit socket event to notify the assigned employee
     if (global.io && global.connectedUsers) {
       const assignedToId = task.assignedToId;
@@ -60,6 +71,7 @@ exports.createTask = async (req, res) => {
           message: `New task assigned: ${task.title}`,
           timestamp: new Date()
         });
+        global.io.to(socketId).emit('update_unreads');
         console.log(`Notification sent to employee ${assignedToId} via socket ${socketId}`);
       } else {
         console.log(`Employee ${assignedToId} is not connected`);
@@ -255,6 +267,16 @@ exports.updateTask = async (req, res) => {
       
       // Check if assignedTo changed - notify new assignee
       if (assignedTo && originalAssignedTo !== newAssignedTo) {
+        await prisma.notification.create({
+          data: {
+            userId: newAssignedTo,
+            title: 'Task Reassigned',
+            message: updatedTask.title,
+            type: 'TASK_ASSIGNED',
+            link: '/employee-dashboard'
+          }
+        });
+
         const newSocketId = global.connectedUsers.get(newAssignedTo);
         
         if (newSocketId) {
@@ -263,6 +285,7 @@ exports.updateTask = async (req, res) => {
             message: `Task reassigned to you: ${updatedTask.title}`,
             timestamp: new Date()
           });
+          global.io.to(newSocketId).emit('update_unreads');
         }
       }
       
@@ -284,19 +307,29 @@ exports.updateTask = async (req, res) => {
       const statusChanged = updateData.status && updateData.status !== originalTask.status;
       if (statusChanged && originalTask.createdById) {
         const creatorId = originalTask.createdById;
-        const creatorSocketId = global.connectedUsers.get(creatorId);
-        
-        if (creatorSocketId && creatorId !== assignedToIdToNotify) {
-          let statusMessage = '';
-          if (status === 'in-progress') statusMessage = `Task started: ${updatedTask.title}`;
-          else if (status === 'completed') statusMessage = `Task completed: ${updatedTask.title}`;
-          
-          if (statusMessage) {
-            global.io.to(creatorSocketId).emit('taskStatusChanged', {
-              task: formattedTask,
-              message: statusMessage,
-              timestamp: new Date()
-            });
+        let statusMessage = '';
+        if (status === 'in-progress') statusMessage = `Task started: ${updatedTask.title}`;
+        else if (status === 'completed') statusMessage = `Task completed: ${updatedTask.title}`;
+
+        if (statusMessage) {
+          await prisma.notification.create({
+            data: {
+               userId: creatorId,
+               title: 'Task Status Updated',
+               message: statusMessage,
+               type: 'TASK_UPDATE',
+               link: '/admin-dashboard'
+            }
+          });
+
+          const creatorSocketId = global.connectedUsers.get(creatorId);
+          if (creatorSocketId && creatorId !== assignedToIdToNotify) {
+             global.io.to(creatorSocketId).emit('taskStatusChanged', {
+                task: formattedTask,
+                message: statusMessage,
+                timestamp: new Date()
+             });
+             global.io.to(creatorSocketId).emit('update_unreads');
           }
         }
       }

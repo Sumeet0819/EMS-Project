@@ -26,6 +26,13 @@ enum Priority {
   high
 }
 
+enum NotificationType {
+  TASK_ASSIGNED
+  TASK_UPDATE
+  ANNOUNCEMENT
+  SYSTEM
+}
+
 model User {
   id        String   @id @default(uuid())
   email     String   @unique
@@ -40,6 +47,12 @@ model User {
   tasksAssigned Task[] @relation("AssignedTasks")
   tasksCreated  Task[] @relation("CreatedTasks")
   workLogs      DailyWorkLog[]
+  announcements Announcement[]
+  sentMessages  Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+  notifications Notification[]
+  channelMembers ChannelMember[]
+  channelMessages ChannelMessage[]
 
   @@map("users")
 }
@@ -85,4 +98,84 @@ model DailyWorkLog {
 
   @@unique([userId, date])
   @@map("daily_work_logs")
+}
+
+model Announcement {
+  id        String   @id @default(uuid())
+  title     String
+  content   String   @db.Text
+  authorId  String   @map("author_id")
+  author    User     @relation(fields: [authorId], references: [id])
+  createdAt DateTime @default(now()) @map("created_at")
+  expiresAt DateTime? @map("expires_at") // Optional: when the announcement should disappear
+  
+  @@map("announcements")
+}
+
+model Message {
+  id          String   @id @default(uuid())
+  content     String   @db.Text
+  senderId    String   @map("sender_id")
+  sender      User     @relation("SentMessages", fields: [senderId], references: [id])
+  receiverId  String   @map("receiver_id")
+  receiver    User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  isRead      Boolean  @default(false) @map("is_read")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("messages")
+}
+
+model Notification {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id") // The recipient
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  message     String
+  type        NotificationType // Enum: TASK_ASSIGNED, TASK_UPDATE, ANNOUNCEMENT, SYSTEM
+  link        String?  // Optional URL/Route to navigate to when clicked
+  isRead      Boolean  @default(false) @map("is_read")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("notifications")
+}
+
+model Channel {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  isBroadcast Boolean  @default(false) @map("is_broadcast")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  members     ChannelMember[]
+  messages    ChannelMessage[]
+
+  @@map("channels")
+}
+
+model ChannelMember {
+  id        String   @id @default(uuid())
+  channelId String   @map("channel_id")
+  userId    String   @map("user_id")
+  joinedAt  DateTime @default(now()) @map("joined_at")
+  lastReadAt DateTime @default(now()) @map("last_read_at")
+
+  channel   Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([channelId, userId])
+  @@map("channel_members")
+}
+
+model ChannelMessage {
+  id        String   @id @default(uuid())
+  channelId String   @map("channel_id")
+  senderId  String   @map("sender_id")
+  content   String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+
+  channel   Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@map("channel_messages")
 }

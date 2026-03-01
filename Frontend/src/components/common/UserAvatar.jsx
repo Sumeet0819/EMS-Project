@@ -7,6 +7,7 @@ import { cn } from "../../lib/utils";
  * Renders initials inside an Avatar circle
  */
 const sizeMap = {
+  xs: "h-6 w-6 text-[10px]",
   sm: "h-7 w-7 text-xs",
   md: "h-9 w-9 text-sm",
   lg: "h-12 w-12 text-base",

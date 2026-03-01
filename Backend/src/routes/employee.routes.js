@@ -31,11 +31,14 @@ const employeeSelect = {
 // Protect all routes
 router.use(authMiddleware);
 
-// Get all employees
+// Get all employees (or all users if ?all=true is passed)
 router.get("/", async (req, res) => {
   try {
+    const { all } = req.query;
+    const whereClause = all === 'true' ? {} : { role: "employee" };
+
     const employees = await prisma.user.findMany({
-      where: { role: "employee" },
+      where: whereClause,
       select: employeeSelect
     });
     
