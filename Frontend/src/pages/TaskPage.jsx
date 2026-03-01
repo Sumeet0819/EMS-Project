@@ -13,7 +13,6 @@ import { RiDeleteBinLine, RiPencilLine, RiAddLine, RiTaskLine } from "@remixicon
 import { toast } from "sonner";
 import SearchBar from "../components/common/SearchBar";
 import ViewToggle from "../components/common/ViewToggle";
-import { FixedSizeList as List } from 'react-window';
 import StatusBadge from "../components/common/StatusBadge";
 import PriorityBadge from "../components/common/PriorityBadge";
 import PageHeader from "../components/common/PageHeader";
@@ -205,43 +204,32 @@ const TaskPage = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                <List
-                  height={600} // The height of the scrolling window
-                  itemCount={filteredTasks.length}
-                  itemSize={65} // Example height of a table row
-                  width="100%"
-                >
-                  {({ index, style }) => {
-                    const task = filteredTasks[index];
-                    return (
-                      <TableRow 
-                        key={task._id} 
-                        style={style}
-                        onClick={() => { setSelectedTask(task); setShowDetailsModal(true); }} 
-                        className="cursor-pointer hover:bg-muted/20 transition-colors flex items-center justify-between border-b"
+                {filteredTasks.map((task) => (
+                  <TableRow 
+                    key={task._id} 
+                    onClick={() => { setSelectedTask(task); setShowDetailsModal(true); }} 
+                    className="cursor-pointer hover:bg-muted/20 transition-colors"
+                  >
+                    <TableCell className="font-semibold py-4 min-w-[150px] max-w-[200px] md:max-w-none truncate">{task.title}</TableCell>
+                    <TableCell className="whitespace-nowrap min-w-[150px] truncate">
+                      {task.assignedTo?.fullName
+                        ? `${task.assignedTo.fullName.firstName} ${task.assignedTo.fullName.lastName}`
+                        : "Unassigned"}
+                    </TableCell>
+                    <TableCell className="w-[120px]"><PriorityBadge priority={task.priority} /></TableCell>
+                    <TableCell className="w-[120px]"><StatusBadge status={task.status} /></TableCell>
+                    <TableCell className="text-right w-[80px]">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="text-destructive hover:bg-destructive/10"
+                        onClick={(e) => { e.stopPropagation(); setTaskToDelete(task); setIsDeleteDialogOpen(true); }}
                       >
-                        <TableCell className="font-semibold py-4 min-w-[150px] max-w-[200px] md:max-w-none truncate">{task.title}</TableCell>
-                        <TableCell className="whitespace-nowrap min-w-[150px] truncate">
-                          {task.assignedTo?.fullName
-                            ? `${task.assignedTo.fullName.firstName} ${task.assignedTo.fullName.lastName}`
-                            : "Unassigned"}
-                        </TableCell>
-                        <TableCell className="w-[120px]"><PriorityBadge priority={task.priority} /></TableCell>
-                        <TableCell className="w-[120px]"><StatusBadge status={task.status} /></TableCell>
-                        <TableCell className="text-right w-[80px]">
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="text-destructive hover:bg-destructive/10"
-                            onClick={(e) => { e.stopPropagation(); setTaskToDelete(task); setIsDeleteDialogOpen(true); }}
-                          >
-                            <RiDeleteBinLine size={16} />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  }}
-                </List>
+                        <RiDeleteBinLine size={16} />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
               </TableBody>
             </Table>
           </div>
