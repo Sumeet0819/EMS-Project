@@ -14,13 +14,15 @@ const sizeMap = {
   xl: "h-16 w-16 text-lg",
 };
 
-const UserAvatar = ({ firstName = "", lastName = "", className, size = "md" }) => {
+const UserAvatar = React.memo(({ firstName = "", lastName = "", className, size = "md" }) => {
   const initials = `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase() || "U";
   return (
     <Avatar className={cn(sizeMap[size], className)}>
       <AvatarFallback>{initials}</AvatarFallback>
     </Avatar>
   );
-};
+});
+
+UserAvatar.displayName = "UserAvatar";
 
 export default UserAvatar;

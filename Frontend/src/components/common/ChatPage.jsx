@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useSelector, useDispatch, shallowEqual } from 'react-redux';
 import {
   RiHashtag, RiAddLine, RiSearch2Line, RiSendPlane2Line,
   RiCloseLine, RiMessage3Line, RiUserLine
@@ -25,12 +25,48 @@ import UserAvatar from '../common/UserAvatar';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 
+// ─── Memoized message bubble — prevents the entire list re-rendering ──────────
+const MessageBubble = React.memo(({ msg, isMe, showSender, inChannel }) => (
+  <div className={`flex gap-3 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
+    {showSender && !isMe && (
+      <div className="shrink-0 mt-0.5">
+        {msg.sender ? (
+          <UserAvatar firstName={msg.sender.firstName} lastName={msg.sender.lastName} size="sm" />
+        ) : (
+          <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
+            <RiUserLine size={14} className="text-muted-foreground" />
+          </div>
+        )}
+      </div>
+    )}
+    {!showSender && !isMe && <div className="w-8 shrink-0" />}
+    <div className={`flex flex-col max-w-[70%] ${isMe ? 'items-end' : 'items-start'}`}>
+      {showSender && !isMe && msg.sender && (
+        <span className="text-[11px] font-semibold text-muted-foreground mb-1 ml-0.5">
+          {msg.sender.firstName} {msg.sender.lastName}
+        </span>
+      )}
+      <div className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed shadow-sm
+        ${isMe
+          ? 'bg-primary text-primary-foreground rounded-br-sm'
+          : 'bg-card border border-border/60 text-foreground rounded-bl-sm'
+        }`}>
+        {msg.content}
+      </div>
+      <span className="text-[9px] text-muted-foreground/50 mt-1 mx-1">
+        {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+      </span>
+    </div>
+  </div>
+));
+MessageBubble.displayName = 'MessageBubble';
+
 /**
  * ChatPage — full-page, two-column chat experience.
  * Left column: channel + DM list.
  * Right column: selected conversation / message thread.
  */
-const ChatPage = () => {
+const ChatPage = React.memo(() => {
   const [searchQuery, setSearchQuery] = useState('');
   const [inputMsg, setInputMsg] = useState('');
   const [isCreatingChannel, setIsCreatingChannel] = useState(false);
@@ -43,14 +79,12 @@ const ChatPage = () => {
   const dispatch = useDispatch();
   const socket = useSocket();
 
-  const { user } = useSelector(s => s.userReducer);
-  const { activeChatUser, messages, conversations } = useSelector(s => s.messageReducer);
-  const { channels, activeChannel, channelMessages } = useSelector(s => s.channelReducer);
+  // ─── shallowEqual prevents re-renders when reference changes but data is same ─
+  const { user } = useSelector(s => s.userReducer, shallowEqual);
+  const { activeChatUser, messages, conversations } = useSelector(s => s.messageReducer, shallowEqual);
+  const { channels, activeChannel, channelMessages } = useSelector(s => s.channelReducer, shallowEqual);
 
   // ─── Fetch ───────────────────────────────────────────────────────────────────
-  // ChatUnreadListener (always mounted) already bootstraps conversations + channels.
-  // ChatPage only needs to refresh the list view when it mounts so the left panel
-  // shows up-to-date data (new convos that arrived while away).
   useEffect(() => {
     if (!user?.id) return;
     getConversations().then(r => dispatch(setConversations(r.data))).catch(() => {});
@@ -58,8 +92,6 @@ const ChatPage = () => {
   }, [user?.id, dispatch]);
 
   // ─── Socket — active thread only ─────────────────────────────────────────────
-  // Only handle appending messages to the OPEN thread + marking them read.
-  // Unread counting is done by ChatUnreadListener which is always mounted.
   useEffect(() => {
     if (!socket || !user?.id) return;
 
@@ -90,15 +122,14 @@ const ChatPage = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, channelMessages]);
 
-  // Auto-focus input when switching conversations
   useEffect(() => {
     if ((activeChatUser || activeChannel) && inputRef.current) {
       inputRef.current.focus();
     }
   }, [activeChatUser, activeChannel]);
 
-  // ─── Actions ─────────────────────────────────────────────────────────────────
-  const openDM = async (target) => {
+  // ─── Actions — all useCallback for stable refs ───────────────────────────────
+  const openDM = useCallback(async (target) => {
     if (!target?.id) return;
     dispatch(setActiveChannel(null));
     const name = `${target.fullName?.firstName || ''} ${target.fullName?.lastName || ''}`.trim() || 'Unknown';
@@ -109,9 +140,9 @@ const ChatPage = () => {
       dispatch(setMessages(res.data));
       await markDmRead(target.id);
     } catch (e) {}
-  };
+  }, [dispatch]);
 
-  const openChannel = async (ch) => {
+  const openChannel = useCallback(async (ch) => {
     if (!ch?.id) return;
     dispatch(setActiveChatUser(null));
     dispatch(setActiveChannel(ch));
@@ -121,9 +152,9 @@ const ChatPage = () => {
       dispatch(setChannelMessages(res.data));
       await markChannelRead(ch.id);
     } catch (e) {}
-  };
+  }, [dispatch, socket]);
 
-  const handleSend = async (e) => {
+  const handleSend = useCallback(async (e) => {
     e.preventDefault();
     if (!inputMsg.trim()) return;
     if (activeChatUser) {
@@ -143,9 +174,9 @@ const ChatPage = () => {
         setInputMsg('');
       } catch (e) {}
     }
-  };
+  }, [inputMsg, activeChatUser, activeChannel, dispatch]);
 
-  const handleCreateChannel = async (e) => {
+  const handleCreateChannel = useCallback(async (e) => {
     e.preventDefault();
     if (!newChannelName.trim()) return;
     try {
@@ -153,12 +184,12 @@ const ChatPage = () => {
       toast.success('Channel created');
       setIsCreatingChannel(false); setNewChannelName(''); setNewChannelDesc(''); setIsBroadcast(false);
     } catch { toast.error('Failed to create channel'); }
-  };
+  }, [newChannelName, newChannelDesc, isBroadcast]);
 
-  const handleDeleteChannel = async (ev, id) => {
+  const handleDeleteChannel = useCallback(async (ev, id) => {
     ev.stopPropagation();
     try { await deleteChannel(id); } catch { toast.error('Failed to delete'); }
-  };
+  }, []);
 
   if (!user) return null;
 
@@ -166,10 +197,17 @@ const ChatPage = () => {
   const inChannel = !!activeChannel;
   const inFocus   = inChat || inChannel;
 
+  // ─── useMemo: recompute only when source data or query changes ───────────────
   const q = searchQuery.toLowerCase();
-  const filteredChannels = channels.filter(ch => ch.name.toLowerCase().includes(q));
-  const filteredConvos   = conversations.filter(c =>
-    `${c.fullName?.firstName || ''} ${c.fullName?.lastName || ''}`.toLowerCase().includes(q)
+  const filteredChannels = useMemo(
+    () => channels.filter(ch => ch.name.toLowerCase().includes(q)),
+    [channels, q]
+  );
+  const filteredConvos = useMemo(
+    () => conversations.filter(c =>
+      `${c.fullName?.firstName || ''} ${c.fullName?.lastName || ''}`.toLowerCase().includes(q)
+    ),
+    [conversations, q]
   );
 
   // Active messages array
@@ -229,10 +267,13 @@ const ChatPage = () => {
           {filteredChannels.map(ch => {
             const isActive = activeChannel?.id === ch.id;
             return (
-              <button
+              <div
                 key={ch.id}
+                role="button"
+                tabIndex={0}
                 onClick={() => openChannel(ch)}
-                className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg mx-1 text-left transition-colors group relative
+                onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && openChannel(ch)}
+                className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg mx-1 text-left transition-colors group relative cursor-pointer
                   ${isActive ? 'bg-primary/10 text-primary font-semibold' : 'hover:bg-muted/50 text-muted-foreground hover:text-foreground'}`}
                 style={{ width: 'calc(100% - 8px)' }}
               >
@@ -247,7 +288,7 @@ const ChatPage = () => {
                     <RiCloseLine size={13} />
                   </button>
                 )}
-              </button>
+              </div>
             );
           })}
 
@@ -323,41 +364,16 @@ const ChatPage = () => {
               )}
               {activeMessages.map((msg, i) => {
                 const isMe = msg.senderId === user.id;
-                // Group consecutive messages from the same sender
                 const prevMsg = activeMessages[i - 1];
                 const showSender = !prevMsg || prevMsg.senderId !== msg.senderId;
                 return (
-                  <div key={msg.id || i} className={`flex gap-3 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
-                    {showSender && !isMe && (
-                      <div className="shrink-0 mt-0.5">
-                        {msg.sender ? (
-                          <UserAvatar firstName={msg.sender.firstName} lastName={msg.sender.lastName} size="sm" />
-                        ) : (
-                          <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
-                            <RiUserLine size={14} className="text-muted-foreground" />
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    {!showSender && !isMe && <div className="w-8 shrink-0" />}
-                    <div className={`flex flex-col max-w-[70%] ${isMe ? 'items-end' : 'items-start'}`}>
-                      {showSender && !isMe && msg.sender && (
-                        <span className="text-[11px] font-semibold text-muted-foreground mb-1 ml-0.5">
-                          {msg.sender.firstName} {msg.sender.lastName}
-                        </span>
-                      )}
-                      <div className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed shadow-sm
-                        ${isMe
-                          ? 'bg-primary text-primary-foreground rounded-br-sm'
-                          : 'bg-card border border-border/60 text-foreground rounded-bl-sm'
-                        }`}>
-                        {msg.content}
-                      </div>
-                      <span className="text-[9px] text-muted-foreground/50 mt-1 mx-1">
-                        {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                    </div>
-                  </div>
+                  <MessageBubble
+                    key={msg.id || i}
+                    msg={msg}
+                    isMe={isMe}
+                    showSender={showSender}
+                    inChannel={inChannel}
+                  />
                 );
               })}
               <div ref={messagesEndRef} />
@@ -399,6 +415,8 @@ const ChatPage = () => {
       </div>
     </div>
   );
-};
+});
+
+ChatPage.displayName = 'ChatPage';
 
 export default ChatPage;

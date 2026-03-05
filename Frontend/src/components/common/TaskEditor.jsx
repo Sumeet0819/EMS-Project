@@ -4,9 +4,10 @@ import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Textarea } from "../ui/textarea";
-import { RiArrowLeftLine, RiSave3Line, RiCheckboxCircleLine, RiPlayFill, RiStopFill, RiSendPlane2Line } from "@remixicon/react";
+import { RiArrowLeftLine, RiSave3Line, RiCheckboxCircleLine, RiPlayFill, RiStopFill, RiSendPlane2Line, RiHistoryLine, RiStickyNoteLine, RiPencilLine } from "@remixicon/react";
 import { Badge } from "../ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "../ui/dialog";
+import RemarkHistory from "./RemarkHistory";
 
 /**
  * TaskEditor
@@ -23,6 +24,7 @@ const TaskEditor = ({
   onStart,
   onStop,
   onSubmit,
+  onSaveEOD,
 }) => {
   const [form, setForm] = useState({
     title: "",
@@ -33,6 +35,20 @@ const TaskEditor = ({
     isDaily: false,
     remark: "",
   });
+
+  // Tab for daily tasks: "details" | "eod-history"
+  const [activeTab, setActiveTab] = useState("details");
+  const [eodSaving, setEodSaving] = useState(false);
+
+  const handleSaveEOD = async () => {
+    if (!onSaveEOD || !form.remark.trim()) return;
+    setEodSaving(true);
+    try {
+      await onSaveEOD(form.remark);
+    } finally {
+      setEodSaving(false);
+    }
+  };
 
   useEffect(() => {
     if (task) {
@@ -107,7 +123,7 @@ const TaskEditor = ({
       <form onSubmit={handleSubmit} className="flex flex-col h-full border border-border rounded-lg shadow-sm bg-card overflow-y-auto md:overflow-hidden">
         
         {/* Top Section: Task Details */}
-        <div className="flex-shrink-0 flex flex-col border-b border-border md:h-[45%]">
+        <div className="flex-shrink-0 flex flex-col border-b border-border md:h-[35%]">
           {/* Header Action Bar */}
           <div className="flex items-center justify-between px-4 md:px-6 py-4 border-b border-border bg-card sticky top-0 z-10 font-sans">
             <div className="flex items-start gap-2 md:gap-3">
@@ -280,37 +296,134 @@ const TaskEditor = ({
           </div>
         </div>
 
-        {/* Bottom Section: Description */}
-        <div className="flex-1 flex flex-col p-4 md:p-6 bg-background space-y-4 md:h-[55%]">
-          <div className="flex-1 flex flex-col gap-2">
-            <Label htmlFor="description" className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-muted-foreground/80">Task Description</Label>
-            <Textarea
-              id="description"
-              name="description"
-              value={form.description}
-              onChange={handleChange}
-              placeholder={isViewOnly ? "No description provided." : "Enter comprehensive task details..."}
-              disabled={!canEditCoreFields}
-              className="flex-1 resize-none text-sm md:text-base p-4 bg-muted/20 border-none focus-visible:ring-1 focus-visible:ring-primary/20 rounded-md"
-              required
-            />
+        {/* Tab bar — only for daily tasks in edit/view mode */}
+        {form.isDaily && mode !== "create" && task && (
+          <div className="flex border-b border-border bg-card shrink-0">
+            <button
+              type="button"
+              className={`px-5 py-2.5 text-xs font-bold uppercase tracking-widest transition-colors ${
+                activeTab === "details"
+                  ? "border-b-2 border-primary text-primary"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+              onClick={() => setActiveTab("details")}
+            >
+              Task Details
+            </button>
+            <button
+              type="button"
+              className={`flex items-center gap-1.5 px-5 py-2.5 text-xs font-bold uppercase tracking-widest transition-colors ${
+                activeTab === "submit-eod"
+                  ? "border-b-2 border-primary text-primary"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+              onClick={() => setActiveTab("submit-eod")}
+            >
+              <RiStickyNoteLine size={13} /> Submit EOD
+            </button>
+            <button
+              type="button"
+              className={`flex items-center gap-1.5 px-5 py-2.5 text-xs font-bold uppercase tracking-widest transition-colors ${
+                activeTab === "eod-history"
+                  ? "border-b-2 border-primary text-primary"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+              onClick={() => setActiveTab("eod-history")}
+            >
+              <RiHistoryLine size={13} /> EOD History
+            </button>
           </div>
+        )}
 
-          {/* Optional Remark Area */}
-          {(!canEditCoreFields && mode === "edit") || (task?.remark && mode === "view") ? (
-            <div className="flex flex-col gap-2 shrink-0 h-[100px] md:h-[120px]">
-               <Label htmlFor="remark" className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-muted-foreground/80">Remarks / Completion Notes</Label>
-               <Textarea
-                 id="remark"
-                 name="remark"
-                 value={form.remark}
-                 onChange={handleChange}
-                 placeholder="Add context about completion..."
-                 disabled={mode === "view" || (role === "admin" && task?.status === "completed")}
-                 className="flex-1 resize-none text-sm border-dashed bg-background"
-               />
-            </div>
-          ) : null}
+        {/* Bottom Section: Tab Content */}
+        <div className="flex-1 flex flex-col p-4 md:p-6 bg-background space-y-4 md:h-[55%]">
+          {activeTab === "eod-history" && form.isDaily && task ? (
+            <>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/80">EOD Remark History</p>
+              <div className="flex-1 overflow-y-auto">
+                <RemarkHistory
+                  taskId={task._id || task.id}
+                  role={role}
+                  employees={employees}
+                  onSaveEOD={onSaveEOD}
+                />
+              </div>
+            </>
+          ) : activeTab === "submit-eod" && form.isDaily && task ? (
+            <>
+              {(!canEditCoreFields && mode === "edit") || (task?.remark && mode === "view") ? (
+                <div className="flex-1 flex flex-col gap-3 rounded-xl border border-primary/20 bg-primary/5 p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-start gap-2">
+                      <RiStickyNoteLine size={15} className="text-primary mt-0.5 shrink-0" />
+                      <div>
+                        <Label htmlFor="remark" className="text-xs font-bold uppercase tracking-widest text-primary/80">
+                          EOD Remark
+                        </Label>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                          {form.isDaily ? "Your end-of-day update for this task" : "Remarks / completion notes"}
+                        </p>
+                      </div>
+                    </div>
+                    {role === "employee" && mode === "edit" && form.isDaily && onSaveEOD && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        disabled={eodSaving || !form.remark.trim()}
+                        onClick={handleSaveEOD}
+                        className="h-9 px-4 text-xs font-bold gap-2 bg-primary hover:bg-primary/90 shadow-md shadow-primary/20"
+                      >
+                        {eodSaving ? (
+                          <>
+                            <svg className="animate-spin h-3.5 w-3.5" viewBox="0 0 24 24" fill="none">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                            </svg>
+                            Saving...
+                          </>
+                        ) : (
+                          <><RiSave3Line size={13} /> Save EOD Remark</>
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                  <Textarea
+                    id="remark"
+                    name="remark"
+                    value={form.remark}
+                    onChange={handleChange}
+                    placeholder={
+                      form.isDaily
+                        ? "What did you accomplish today on this task? Any blockers or notes for tomorrow?"
+                        : "Add remarks or completion notes..."
+                    }
+                    disabled={mode === "view" || (role === "admin" && task?.status === "completed")}
+                    className="flex-1 resize-none text-sm leading-relaxed bg-background/60 border-primary/20 focus-visible:ring-primary/30 min-h-[120px]"
+                  />
+                </div>
+              ) : (
+                <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground">
+                  EOD remark submission is only available for employees to complete tasks.
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              <div className="flex-1 flex flex-col gap-2">
+                <Label htmlFor="description" className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-muted-foreground/80">Task Description</Label>
+                <Textarea
+                  id="description"
+                  name="description"
+                  value={form.description}
+                  onChange={handleChange}
+                  placeholder={isViewOnly ? "No description provided." : "Enter comprehensive task details..."}
+                  disabled={!canEditCoreFields}
+                  className="flex-1 resize-none text-sm md:text-base p-4 bg-muted/20 border-none focus-visible:ring-1 focus-visible:ring-primary/20 rounded-md"
+                  required
+                />
+              </div>
+            </>
+          )}
         </div>
       </form>
     </div>

@@ -7,6 +7,8 @@ import {
   asyncSubmitTask,
   updateTaskTimerLocal,
   asyncUpdateEmployeeTask,
+  fetchTodayRemark,
+  submitEODRemark,
 } from "../store/actions/employeeTaskActions";
 import { 
   asyncLoadTodayLog, 
@@ -64,6 +66,7 @@ const EmployeeDashboard = () => {
   const [remarkText, setRemarkText] = useState("");
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
+  const [todayRemark, setTodayRemark] = useState(null); // today's pre-filled EOD remark
 
   const socket = useSocket();
 
@@ -182,15 +185,30 @@ const EmployeeDashboard = () => {
 
   const handleEditorSave = async (data) => {
     try {
-      await dispatch(asyncUpdateEmployeeTask(selectedTask._id, {
-        status: data.status,
-        remark: data.remark,
-      }));
+      const payload = { status: data.status, remark: data.remark };
+      await dispatch(asyncUpdateEmployeeTask(selectedTask._id, payload));
       toast.success("Task updated successfully");
       setShowDetailsModal(false);
       setSelectedTask(null);
+      setTodayRemark(null);
     } catch (error) {
        toast.error("Failed to update task");
+    }
+  };
+
+  // When opening a daily task, pre-fetch today's EOD remark to pre-fill the editor
+  const openTaskDetail = async (task) => {
+    setSelectedTask(task);
+    setShowDetailsModal(true);
+    if (task.isDaily) {
+      try {
+        const result = await dispatch(fetchTodayRemark(task._id || task.id));
+        setTodayRemark(result?.data || null);
+      } catch {
+        setTodayRemark(null);
+      }
+    } else {
+      setTodayRemark(null);
     }
   };
 
@@ -237,10 +255,16 @@ const EmployeeDashboard = () => {
           ) : showDetailsModal && selectedTask ? (
             <main className="flex-1 overflow-hidden p-4 md:p-6 lg:p-8">
               <TaskEditor 
-                task={selectedTask}
+                task={todayRemark ? { ...selectedTask, remark: todayRemark.remark } : selectedTask}
                 mode="edit"
                 role="employee"
                 onSave={handleEditorSave}
+                onSaveEOD={selectedTask.isDaily ? async (remark) => {
+                  await dispatch(submitEODRemark(selectedTask._id || selectedTask.id, remark));
+                  const refreshed = await dispatch(fetchTodayRemark(selectedTask._id || selectedTask.id));
+                  setTodayRemark(refreshed?.data || null);
+                  toast.success("EOD remark saved!");
+                } : undefined}
                 onStart={(id) => startTask(id, { stopPropagation: () => {} })}
                 onStop={(id) => stopTask(id, { stopPropagation: () => {} })}
                 onSubmit={async (id, remark) => {
@@ -254,11 +278,13 @@ const EmployeeDashboard = () => {
                     toast.success("Task submitted successfully");
                     setShowDetailsModal(false);
                     setSelectedTask(null);
+                    setTodayRemark(null);
                   } catch (err) { toast.error("Failed to submit task: " + err.message); }
                 }}
                 onCancel={() => {
                   setShowDetailsModal(false);
                   setSelectedTask(null);
+                  setTodayRemark(null);
                 }}
               />
             </main>
@@ -359,7 +385,7 @@ const EmployeeDashboard = () => {
                   </TableHeader>
                   <TableBody>
                     {displayTasks.map((task) => (
-                      <TableRow key={task._id} onClick={() => { setSelectedTask(task); setShowDetailsModal(true); }} className="cursor-pointer hover:bg-muted/20 transition-colors">
+                      <TableRow key={task._id} onClick={() => openTaskDetail(task)} className="cursor-pointer hover:bg-muted/20 transition-colors">
                         <TableCell className="max-w-[250px]">
                           <div className="font-semibold truncate">{task.title}</div>
                           <div className="text-xs text-muted-foreground truncate">{task.description}</div>

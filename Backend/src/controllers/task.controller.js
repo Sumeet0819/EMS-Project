@@ -160,7 +160,7 @@ exports.updateTask = async (req, res) => {
   try {
     console.log("UpdateTask Request Body:", JSON.stringify(req.body, null, 2));
     console.log("UpdateTask Params:", req.params);
-    const { status, remark, assignedTo, title, description, priority, deadline } = req.body;
+    const { status, remark, completionNote, assignedTo, title, description, priority, deadline } = req.body;
     
     // Get the original task to check if assignedTo changed
     const originalTask = await prisma.task.findUnique({ where: { id: req.params.id } });
@@ -172,9 +172,10 @@ exports.updateTask = async (req, res) => {
     if (title !== undefined) updateData.title = title;
     if (description !== undefined) updateData.description = description;
     if (priority !== undefined) updateData.priority = priority;
-    if (remark !== undefined) updateData.remark = remark;
+    if (remark !== undefined) updateData.remark = remark; // always update cache
     if (assignedTo !== undefined) updateData.assignedToId = assignedTo;
     if (deadline !== undefined) updateData.deadline = deadline ? new Date(deadline) : null;
+
     
     // Add startTime when status changes to in-progress
     if (status) {
@@ -412,6 +413,151 @@ exports.getTasksByEmployee = async (req, res) => {
       count: tasks.length,
     });
   } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+// Submit (or update) today's EOD remark for a daily task
+// POST /api/tasks/:id/remarks
+exports.submitEODRemark = async (req, res) => {
+  try {
+    const { remark } = req.body;
+    if (!remark || !remark.trim()) {
+      return res.status(400).json({ success: false, message: "Remark text is required" });
+    }
+
+    // Verify the task exists and is a daily task
+    const task = await prisma.task.findUnique({ where: { id: req.params.id } });
+    if (!task) return res.status(404).json({ success: false, message: "Task not found" });
+    if (!task.isDaily) return res.status(400).json({ success: false, message: "EOD remarks are only for daily tasks" });
+
+    const todayMidnight = new Date();
+    todayMidnight.setUTCHours(0, 0, 0, 0);
+    const submitterId = req.user.id;
+
+    const result = await prisma.taskRemark.upsert({
+      where: {
+        taskId_submittedBy_date: {
+          taskId: req.params.id,
+          submittedBy: submitterId,
+          date: todayMidnight,
+        }
+      },
+      update: { remark: remark.trim() },
+      create: {
+        taskId: req.params.id,
+        submittedBy: submitterId,
+        date: todayMidnight,
+        remark: remark.trim(),
+      }
+    });
+
+    // Also update the Task.remark cache so the task list shows the latest text
+    await prisma.task.update({ where: { id: req.params.id }, data: { remark: remark.trim() } });
+
+    res.status(200).json({ success: true, data: result, message: "EOD remark saved" });
+  } catch (error) {
+    console.error("Error in submitEODRemark:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+// Get EOD remark history for a task (filterable by date/month/range, scoped by role)
+exports.getTaskRemarks = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { date, month, startDate, endDate, userId, page = 1, limit = 20 } = req.query;
+    const isAdmin = req.user.role === 'admin';
+
+    // Build date filter on the `date` column (midnight UTC values)
+    let dateFilter = {};
+    if (date) {
+      // Exact day: match from midnight to end of that day UTC
+      const d = new Date(date);
+      d.setUTCHours(0, 0, 0, 0);
+      const dEnd = new Date(d); dEnd.setUTCHours(23, 59, 59, 999);
+      dateFilter = { date: { gte: d, lte: dEnd } };
+    } else if (month) {
+      // e.g. "2026-03"
+      const [yr, mo] = month.split('-').map(Number);
+      const start = new Date(Date.UTC(yr, mo - 1, 1));
+      const end = new Date(Date.UTC(yr, mo, 0, 23, 59, 59, 999));
+      dateFilter = { date: { gte: start, lte: end } };
+    } else if (startDate || endDate) {
+      const fromDate = startDate ? new Date(startDate) : new Date(0);
+      fromDate.setUTCHours(0, 0, 0, 0);
+      const toDate = endDate ? new Date(endDate) : new Date();
+      toDate.setUTCHours(23, 59, 59, 999);
+      dateFilter = { date: { gte: fromDate, lte: toDate } };
+    }
+
+    // Role-based scoping: employee sees only their own; admin can filter by userId
+    const userFilter = isAdmin
+      ? (userId ? { submittedBy: userId } : {})
+      : { submittedBy: req.user.id };
+
+    const where = { taskId: id, ...dateFilter, ...userFilter };
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    const [remarks, total] = await Promise.all([
+      prisma.taskRemark.findMany({
+        where,
+        include: { user: { select: { id: true, firstName: true, lastName: true } } },
+        orderBy: { date: 'desc' },
+        skip,
+        take: parseInt(limit),
+      }),
+      prisma.taskRemark.count({ where }),
+    ]);
+
+    const formatted = remarks.map(r => ({
+      id: r.id,
+      date: r.date,
+      remark: r.remark,
+      completionNote: r.completionNote,
+      updatedAt: r.updatedAt,
+      submittedBy: r.user ? {
+        id: r.user.id,
+        firstName: r.user.firstName,
+        lastName: r.user.lastName,
+      } : null,
+    }));
+
+    res.status(200).json({
+      success: true,
+      data: formatted,
+      pagination: {
+        total,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalPages: Math.ceil(total / parseInt(limit)),
+      }
+    });
+  } catch (error) {
+    console.error("Error in getTaskRemarks:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+// Get today's EOD remark for the current user (used to pre-fill the remark textarea)
+exports.getTodayRemark = async (req, res) => {
+  try {
+    const todayMidnight = new Date();
+    todayMidnight.setUTCHours(0, 0, 0, 0);
+    const tomorrowMidnight = new Date(todayMidnight);
+    tomorrowMidnight.setUTCDate(tomorrowMidnight.getUTCDate() + 1);
+
+    const remark = await prisma.taskRemark.findFirst({
+      where: {
+        taskId: req.params.id,
+        submittedBy: req.user.id,
+        date: { gte: todayMidnight, lt: tomorrowMidnight },
+      }
+    });
+
+    res.status(200).json({ success: true, data: remark || null });
+  } catch (error) {
+    console.error("Error in getTodayRemark:", error);
     res.status(500).json({ success: false, error: error.message });
   }
 };

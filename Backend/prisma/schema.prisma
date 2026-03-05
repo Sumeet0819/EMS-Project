@@ -53,6 +53,7 @@ model User {
   notifications Notification[]
   channelMembers ChannelMember[]
   channelMessages ChannelMessage[]
+  taskRemarks   TaskRemark[] @relation("UserTaskRemarks")
 
   @@map("users")
 }
@@ -77,13 +78,34 @@ model Task {
   totalTimeSpent Int        @default(0) @map("total_time_spent") // total seconds spent on task
   shiftTimeSpent Int        @default(0) @map("shift_time_spent") // total seconds spent in current 12hr shift
   lastResetTime DateTime?  @map("last_reset_time")
-  remark        String     @default("")
+  remark        String     @default("") // Denormalised cache of latest remark for fast list display
   isDaily       Boolean    @default(false) @map("is_daily")
+
+  // EOD remark history (for daily tasks)
+  remarks       TaskRemark[]
 
   createdAt     DateTime   @default(now()) @map("created_at")
   updatedAt     DateTime   @updatedAt @map("updated_at")
 
   @@map("tasks")
+}
+
+// One EOD remark per user per task per calendar day (enforced by @@unique)
+model TaskRemark {
+  id             String   @id @default(uuid())
+  taskId         String   @map("task_id")
+  task           Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  submittedBy    String   @map("submitted_by")
+  user           User     @relation("UserTaskRemarks", fields: [submittedBy], references: [id], onDelete: Cascade)
+  date           DateTime @map("date")          // Calendar date (midnight UTC) — the unique day key
+  remark         String   @db.Text             // Main EOD remark body
+  completionNote String?  @db.Text @map("completion_note") // Optional closing note
+  updatedAt      DateTime @updatedAt @map("updated_at")    // Tracks last edit time
+
+  @@unique([taskId, submittedBy, date])          // One EOD entry per user per task per day
+  @@index([taskId, date])
+  @@index([submittedBy, date])
+  @@map("task_remarks")
 }
 
 model DailyWorkLog {

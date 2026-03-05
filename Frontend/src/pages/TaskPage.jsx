@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   asyncLoadEmployeeTasks,
@@ -9,7 +9,7 @@ import {
 import { asyncLoadEmployees } from "../store/actions/employeeActions";
 
 import TaskEditor from "../components/common/TaskEditor";
-import { RiDeleteBinLine, RiPencilLine, RiAddLine, RiTaskLine } from "@remixicon/react";
+import { RiDeleteBinLine, RiPencilLine, RiAddLine, RiTaskLine, RiArrowLeftLine, RiArrowRightLine } from "@remixicon/react";
 import { toast } from "sonner";
 import SearchBar from "../components/common/SearchBar";
 import ViewToggle from "../components/common/ViewToggle";
@@ -26,7 +26,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from ".
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 
 
-const TaskPage = () => {
+const PAGE_SIZE = 15;
+
+const TaskPage = React.memo(() => {
   const dispatch = useDispatch();
   const { tasks } = useSelector((state) => state.employeeTaskReducer);
   const { employees } = useSelector((state) => state.employeeReducer);
@@ -43,6 +45,9 @@ const TaskPage = () => {
   const [taskToDelete, setTaskToDelete] = useState(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+
   // Custom Hooks
   const {
     searchQuery,
@@ -53,6 +58,15 @@ const TaskPage = () => {
     setViewMode,
     filteredTasks
   } = useTaskFilters(tasks);
+
+  // Reset to page 1 whenever filters change
+  useEffect(() => { setCurrentPage(1); }, [filteredTasks]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredTasks.length / PAGE_SIZE));
+  const pagedTasks = useMemo(
+    () => filteredTasks.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+    [filteredTasks, currentPage]
+  );
 
   useTaskSocket({
     selectedTask,
@@ -69,44 +83,48 @@ const TaskPage = () => {
     dispatch(asyncLoadEmployees());
   }, [dispatch]);
 
-  const handleCreateTask = async (newTask) => {
+  const handleCreateTask = useCallback(async (newTask) => {
     try {
       await dispatch(asyncCreateEmployeeTask(newTask));
-      dispatch(asyncLoadEmployeeTasks());
       setShowCreateModal(false);
       toast.success("Task Created Successfully");
     } catch {
       toast.error("Failed to create task");
     }
-  };
+  }, [dispatch]);
 
-  const handleUpdateTask = async (data) => {
+  const handleUpdateTask = useCallback(async (data) => {
     try {
       await dispatch(asyncUpdateEmployeeTask(selectedTask._id, data));
-      dispatch(asyncLoadEmployeeTasks());
       toast.success("Task updated successfully");
       setIsEditMode(false);
       setSelectedTask(null);
     } catch {
       toast.error("Failed to update task");
     }
-  };
+  }, [dispatch, selectedTask]);
 
-  const confirmDelete = async () => {
+  const confirmDelete = useCallback(async () => {
     try {
       await dispatch(asyncDeleteEmployeeTask(taskToDelete._id));
-      dispatch(asyncLoadEmployeeTasks());
       toast.success("Task deleted successfully");
       setIsDeleteDialogOpen(false);
       setTaskToDelete(null);
     } catch {
       toast.error("Failed to delete task");
     }
-  };
+  }, [dispatch, taskToDelete]);
 
+  const handleRowClick = useCallback((task) => {
+    setSelectedTask(task);
+    setShowDetailsModal(true);
+  }, []);
 
-
-
+  const handleDeleteClick = useCallback((e, task) => {
+    e.stopPropagation();
+    setTaskToDelete(task);
+    setIsDeleteDialogOpen(true);
+  }, []);
 
   if (showCreateModal) {
     return (
@@ -204,10 +222,10 @@ const TaskPage = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredTasks.map((task) => (
+                {pagedTasks.map((task) => (
                   <TableRow 
                     key={task._id} 
-                    onClick={() => { setSelectedTask(task); setShowDetailsModal(true); }} 
+                    onClick={() => handleRowClick(task)}
                     className="cursor-pointer hover:bg-muted/20 transition-colors"
                   >
                     <TableCell className="font-semibold py-4 min-w-[150px] max-w-[200px] md:max-w-none truncate">{task.title}</TableCell>
@@ -223,7 +241,7 @@ const TaskPage = () => {
                         variant="ghost" 
                         size="icon" 
                         className="text-destructive hover:bg-destructive/10"
-                        onClick={(e) => { e.stopPropagation(); setTaskToDelete(task); setIsDeleteDialogOpen(true); }}
+                        onClick={(e) => handleDeleteClick(e, task)}
                       >
                         <RiDeleteBinLine size={16} />
                       </Button>
@@ -236,11 +254,11 @@ const TaskPage = () => {
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filteredTasks.map((task) => (
+          {pagedTasks.map((task) => (
             <Card 
               key={task._id} 
               className="flex flex-col cursor-pointer hover:border-primary/50 transition-colors"
-              onClick={() => { setSelectedTask(task); setShowDetailsModal(true); }}
+              onClick={() => handleRowClick(task)}
             >
               <div className="p-4 flex-1">
                 <div className="flex justify-between items-start mb-3">
@@ -248,7 +266,7 @@ const TaskPage = () => {
                   <div className="flex -mt-2 -mr-2">
                     <Button 
                       variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                      onClick={(e) => { e.stopPropagation(); setTaskToDelete(task); setIsDeleteDialogOpen(true); }}
+                      onClick={(e) => handleDeleteClick(e, task)}
                     >
                       <RiDeleteBinLine size={15} />
                     </Button>
@@ -271,6 +289,63 @@ const TaskPage = () => {
         </div>
       )}
 
+      {/* ── Pagination controls ── */}
+      {filteredTasks.length > 0 && totalPages > 1 && (
+        <div className="flex items-center justify-between px-1">
+          <p className="text-xs text-muted-foreground">
+            Showing{" "}
+            <span className="font-medium text-foreground">
+              {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filteredTasks.length)}
+            </span>{" "}
+            of{" "}
+            <span className="font-medium text-foreground">{filteredTasks.length}</span> tasks
+          </p>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+            >
+              <RiArrowLeftLine size={15} />
+            </Button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+              .reduce((acc, p, idx, arr) => {
+                if (idx > 0 && p - arr[idx - 1] > 1) acc.push('...');
+                acc.push(p);
+                return acc;
+              }, [])
+              .map((item, idx) =>
+                item === '...' ? (
+                  <span key={`ellipsis-${idx}`} className="px-1 text-xs text-muted-foreground">…</span>
+                ) : (
+                  <Button
+                    key={item}
+                    variant={currentPage === item ? 'default' : 'outline'}
+                    size="icon"
+                    className="h-8 w-8 text-xs"
+                    onClick={() => setCurrentPage(item)}
+                  >
+                    {item}
+                  </Button>
+                )
+              )
+            }
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+            >
+              <RiArrowRightLine size={15} />
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Modals */}
 
 
@@ -286,6 +361,8 @@ const TaskPage = () => {
 
     </div>
   );
-};
+});
+
+TaskPage.displayName = "TaskPage";
 
 export default TaskPage;

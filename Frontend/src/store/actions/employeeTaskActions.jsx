@@ -157,3 +157,25 @@ export const asyncLoadTaskStats = () => async (dispatch) => {
     dispatch(setLoading(false));
   }
 };
+
+// Fetch EOD remark history for a task (with optional filters)
+// filters: { date, month, startDate, endDate, userId, page, limit }
+export const fetchTaskRemarks = (taskId, filters = {}) => async () => {
+  const params = new URLSearchParams();
+  Object.entries(filters).forEach(([k, v]) => { if (v) params.set(k, v); });
+  const { data } = await axios.get(`/tasks/${taskId}/remarks?${params.toString()}`);
+  return data; // { success, data: [...], pagination }
+};
+
+// Submit (or update) today's EOD remark via the dedicated endpoint
+export const submitEODRemark = (taskId, remark) => async () => {
+  const { data } = await axios.post(`/tasks/${taskId}/remarks`, { remark });
+  return data; // { success, data: remark, message }
+};
+
+// Fetch today's EOD remark for a task (for the current logged-in user)
+export const fetchTodayRemark = (taskId) => async () => {
+  const { data } = await axios.get(`/tasks/${taskId}/remarks/today`);
+  return data; // { success, data: remark | null }
+};
+

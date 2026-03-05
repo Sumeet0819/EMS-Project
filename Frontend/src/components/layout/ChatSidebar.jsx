@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useSelector, useDispatch, shallowEqual } from 'react-redux';
 import {
   RiCloseLine, RiSendPlane2Line, RiArrowLeftLine,
   RiHashtag, RiAddLine, RiSearch2Line, RiMessage3Line
@@ -30,10 +30,9 @@ import { Input } from '../ui/input';
  * Props:
  *   isOpen  {boolean}   – whether the panel is visible
  *   onClose {function}  – callback to hide the panel
- *   unreadCount {number} – total unread badge count (controlled by parent)
  *   onUnreadChange {fn} – (count) => void — parent updates its badge
  */
-const ChatSidebar = ({ isOpen, onClose, onUnreadChange }) => {
+const ChatSidebar = React.memo(({ isOpen, onClose, onUnreadChange }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [inputMsg, setInputMsg] = useState('');
   const [totalUnread, setTotalUnread] = useState(0);
@@ -46,9 +45,23 @@ const ChatSidebar = ({ isOpen, onClose, onUnreadChange }) => {
   const dispatch = useDispatch();
   const socket = useSocket();
 
-  const { user } = useSelector(s => s.userReducer);
-  const { activeChatUser, messages, conversations } = useSelector(s => s.messageReducer);
-  const { channels, activeChannel, channelMessages } = useSelector(s => s.channelReducer);
+  // ─── shallowEqual prevents re-renders when reference changes but data is same ─
+  const { user } = useSelector(s => s.userReducer, shallowEqual);
+  const { activeChatUser, messages, conversations } = useSelector(s => s.messageReducer, shallowEqual);
+  const { channels, activeChannel, channelMessages } = useSelector(s => s.channelReducer, shallowEqual);
+
+  // ─── Refs: give socket handlers always-fresh values without re-registering ────
+  const activeChatUserRef = useRef(activeChatUser);
+  const activeChannelRef  = useRef(activeChannel);
+  const userRef           = useRef(user);
+  const channelsRef       = useRef(channels);
+  const conversationsRef  = useRef(conversations);
+
+  useEffect(() => { activeChatUserRef.current = activeChatUser; }, [activeChatUser]);
+  useEffect(() => { activeChannelRef.current  = activeChannel;  }, [activeChannel]);
+  useEffect(() => { userRef.current           = user;           }, [user]);
+  useEffect(() => { channelsRef.current       = channels;       }, [channels]);
+  useEffect(() => { conversationsRef.current  = conversations;  }, [conversations]);
 
   // Sync totalUnread up to parent for header badge
   useEffect(() => {
@@ -57,7 +70,7 @@ const ChatSidebar = ({ isOpen, onClose, onUnreadChange }) => {
 
   // ─── Data fetch ─────────────────────────────────────────────────────────────
   const fetchData = useCallback(() => {
-    if (!user?.id) return;
+    if (!userRef.current?.id) return;
     Promise.all([getConversations(), getChannels()])
       .then(([convRes, chRes]) => {
         const convs = convRes.data;
@@ -69,22 +82,25 @@ const ChatSidebar = ({ isOpen, onClose, onUnreadChange }) => {
         const ch = chs.reduce((a, c)  => a + (c.unreadCount || 0), 0);
         setTotalUnread(dm + ch);
       }).catch(() => {});
-  }, [user, dispatch, socket]);
+  }, [dispatch, socket]); // stable: no user/channels/conversations in deps
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
   // ─── Socket handlers ─────────────────────────────────────────────────────────
+  // Deps are ONLY socket and fetchData — handlers read fresh values via refs.
   useEffect(() => {
     if (!socket) return;
 
     const handleDM = (msg) => {
-      if (activeChatUser && msg.senderId === activeChatUser.id) {
+      const currentUser        = activeChatUserRef.current;
+      const currentLoggedInUser = userRef.current;
+      if (currentUser && msg.senderId === currentUser.id) {
         dispatch(addMessage(msg));
         markDmRead(msg.senderId).catch(() => {});
-      } else if (msg.senderId !== user?.id) {
+      } else if (msg.senderId !== currentLoggedInUser?.id) {
         setTotalUnread(p => p + 1);
         dispatch(incrementDmUnread(msg.senderId));
-        const sender = conversations.find(c => c.id === msg.senderId);
+        const sender = conversationsRef.current.find(c => c.id === msg.senderId);
         const name = sender
           ? `${sender.fullName?.firstName || ''} ${sender.fullName?.lastName || ''}`.trim()
           : 'Someone';
@@ -97,13 +113,15 @@ const ChatSidebar = ({ isOpen, onClose, onUnreadChange }) => {
     };
 
     const handleChannelMsg = (msg) => {
-      if (activeChannel && msg.channelId === activeChannel.id) {
+      const currentChannel     = activeChannelRef.current;
+      const currentLoggedInUser = userRef.current;
+      if (currentChannel && msg.channelId === currentChannel.id) {
         dispatch(addChannelMessage(msg));
         markChannelRead(msg.channelId).catch(() => {});
-      } else if (msg.senderId !== user?.id) {
+      } else if (msg.senderId !== currentLoggedInUser?.id) {
         setTotalUnread(p => p + 1);
         dispatch(incrementChannelUnread(msg.channelId));
-        const ch = channels.find(c => c.id === msg.channelId);
+        const ch = channelsRef.current.find(c => c.id === msg.channelId);
         toast.message(`New message in #${ch?.name || 'channel'}`, {
           description: msg.content.length > 40 ? msg.content.slice(0, 40) + '…' : msg.content,
           action: { label: 'Open', onClick: () => openChannel(ch) }
@@ -129,14 +147,14 @@ const ChatSidebar = ({ isOpen, onClose, onUnreadChange }) => {
       socket.off('channel_deleted');
       socket.off('update_unreads', fetchData);
     };
-  }, [socket, activeChatUser, activeChannel, user, channels, conversations, dispatch, fetchData]);
+  }, [socket, fetchData, dispatch]); // ← only 3 stable deps, no more tear-down on every message
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, channelMessages]);
 
-  // ─── Actions ─────────────────────────────────────────────────────────────────
-  const openDM = async (target) => {
+  // ─── Actions — all wrapped in useCallback for stable refs ───────────────────
+  const openDM = useCallback(async (target) => {
     if (!target?.id) return;
     const name = `${target.fullName?.firstName || ''} ${target.fullName?.lastName || ''}`.trim() || 'Unknown';
     dispatch(setActiveChatUser({ id: target.id, name }));
@@ -149,9 +167,9 @@ const ChatSidebar = ({ isOpen, onClose, onUnreadChange }) => {
       dispatch(setMessages(res.data));
       await markDmRead(target.id);
     } catch (e) {}
-  };
+  }, [dispatch]);
 
-  const openChannel = async (ch) => {
+  const openChannel = useCallback(async (ch) => {
     if (!ch?.id) return;
     dispatch(setActiveChannel(ch));
     if (ch.unreadCount > 0) setTotalUnread(p => Math.max(0, p - ch.unreadCount));
@@ -161,31 +179,33 @@ const ChatSidebar = ({ isOpen, onClose, onUnreadChange }) => {
       dispatch(setChannelMessages(res.data));
       await markChannelRead(ch.id);
     } catch (e) {}
-  };
+  }, [dispatch, socket]);
 
-  const handleSend = async (e) => {
+  const handleSend = useCallback(async (e) => {
     e.preventDefault();
     if (!inputMsg.trim()) return;
-    if (activeChatUser) {
+    const currentChatUser  = activeChatUserRef.current;
+    const currentChannel   = activeChannelRef.current;
+    if (currentChatUser) {
       try {
-        const res = await sendDM(activeChatUser.id, inputMsg);
+        const res = await sendDM(currentChatUser.id, inputMsg);
         dispatch(addMessage(res.data));
         dispatch(upsertConversation({
-          id: activeChatUser.id,
-          fullName: { firstName: activeChatUser.name.split(' ')[0], lastName: activeChatUser.name.split(' ').slice(1).join(' ') },
+          id: currentChatUser.id,
+          fullName: { firstName: currentChatUser.name.split(' ')[0], lastName: currentChatUser.name.split(' ').slice(1).join(' ') },
           role: 'employee', unreadCount: 0
         }));
         setInputMsg('');
       } catch (e) {}
-    } else if (activeChannel) {
+    } else if (currentChannel) {
       try {
-        await sendChannelMessage(activeChannel.id, inputMsg);
+        await sendChannelMessage(currentChannel.id, inputMsg);
         setInputMsg('');
       } catch (e) {}
     }
-  };
+  }, [inputMsg, dispatch]);
 
-  const handleCreateChannel = async (e) => {
+  const handleCreateChannel = useCallback(async (e) => {
     e.preventDefault();
     if (!newChannelName.trim()) return;
     try {
@@ -193,12 +213,12 @@ const ChatSidebar = ({ isOpen, onClose, onUnreadChange }) => {
       toast.success('Channel created');
       setIsCreatingChannel(false); setNewChannelName(''); setNewChannelDesc(''); setIsBroadcast(false);
     } catch { toast.error('Failed to create channel'); }
-  };
+  }, [newChannelName, newChannelDesc, isBroadcast]);
 
-  const handleDeleteChannel = async (e, id) => {
+  const handleDeleteChannel = useCallback(async (e, id) => {
     e.stopPropagation();
     try { await deleteChannel(id); } catch { toast.error('Failed to delete'); }
-  };
+  }, []);
 
   if (!user) return null;
 
@@ -206,10 +226,17 @@ const ChatSidebar = ({ isOpen, onClose, onUnreadChange }) => {
   const inChannel = !!activeChannel;
   const inFocus   = inChat || inChannel;
 
+  // ─── useMemo: recompute only when source data or query changes ───────────────
   const q = searchQuery.toLowerCase();
-  const filteredChannels = channels.filter(ch => ch.name.toLowerCase().includes(q));
-  const filteredConvos   = conversations.filter(c =>
-    `${c.fullName?.firstName || ''} ${c.fullName?.lastName || ''}`.toLowerCase().includes(q)
+  const filteredChannels = useMemo(
+    () => channels.filter(ch => ch.name.toLowerCase().includes(q)),
+    [channels, q]
+  );
+  const filteredConvos = useMemo(
+    () => conversations.filter(c =>
+      `${c.fullName?.firstName || ''} ${c.fullName?.lastName || ''}`.toLowerCase().includes(q)
+    ),
+    [conversations, q]
   );
 
   // ─── Render ───────────────────────────────────────────────────────────────────
@@ -398,6 +425,8 @@ const ChatSidebar = ({ isOpen, onClose, onUnreadChange }) => {
       </div>
     </>
   );
-};
+});
+
+ChatSidebar.displayName = 'ChatSidebar';
 
 export default ChatSidebar;
