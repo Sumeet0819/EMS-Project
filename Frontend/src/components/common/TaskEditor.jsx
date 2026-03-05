@@ -310,18 +310,20 @@ const TaskEditor = ({
             >
               Task Details
             </button>
-            <button
-              type="button"
-              className={`flex items-center gap-1.5 px-5 py-2.5 text-xs font-bold uppercase tracking-widest transition-colors ${
-                activeTab === "submit-eod"
-                  ? "border-b-2 border-primary text-primary"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-              onClick={() => setActiveTab("submit-eod")}
-            >
-              <RiStickyNoteLine size={13} /> Submit EOD
-            </button>
-            <button
+            {role === "employee" && (
+              <button
+                type="button"
+                className={`flex items-center gap-1.5 px-5 py-2.5 text-xs font-bold uppercase tracking-widest transition-colors ${
+                  activeTab === "submit-eod"
+                    ? "border-b-2 border-primary text-primary"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                onClick={() => setActiveTab("submit-eod")}
+              >
+                <RiStickyNoteLine size={13} /> Submit EOD
+              </button>
+            )}
+              <button
               type="button"
               className={`flex items-center gap-1.5 px-5 py-2.5 text-xs font-bold uppercase tracking-widest transition-colors ${
                 activeTab === "eod-history"

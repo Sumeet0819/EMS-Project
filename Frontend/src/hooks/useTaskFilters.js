@@ -8,6 +8,7 @@ import { useDebounce } from 'use-debounce';
  */
 export const useTaskFilters = (tasks = []) => {
   const [employeeFilter, setEmployeeFilter] = useState("all");
+  const [taskTypeFilter, setTaskTypeFilter] = useState("all"); // 'all', 'regular', 'daily'
   const [viewMode, setViewMode] = useState('list'); // 'list' or 'grid'
   
   const [searchQuery, setSearchQuery] = useState("");
@@ -22,7 +23,13 @@ export const useTaskFilters = (tasks = []) => {
         if (assignedToId !== employeeFilter) return false;
       }
 
-      // 2. Search filter
+      // 2. Task Type filter
+      if (taskTypeFilter !== "all") {
+        if (taskTypeFilter === "daily" && !task.isDaily) return false;
+        if (taskTypeFilter === "regular" && task.isDaily) return false;
+      }
+
+      // 3. Search filter
       if (!debouncedSearchQuery) return true;
       const query = debouncedSearchQuery.toLowerCase();
       const title = (task.title || "").toLowerCase();
@@ -35,13 +42,15 @@ export const useTaskFilters = (tasks = []) => {
       
       return title.includes(query) || desc.includes(query) || assigneeName.includes(query);
     });
-  }, [tasks, employeeFilter, debouncedSearchQuery]);
+  }, [tasks, employeeFilter, taskTypeFilter, debouncedSearchQuery]);
 
   return {
     searchQuery,
     setSearchQuery,
     employeeFilter,
     setEmployeeFilter,
+    taskTypeFilter,
+    setTaskTypeFilter,
     viewMode,
     setViewMode,
     filteredTasks

@@ -54,6 +54,8 @@ const TaskPage = React.memo(() => {
     setSearchQuery,
     employeeFilter,
     setEmployeeFilter,
+    taskTypeFilter,     // Added
+    setTaskTypeFilter,  // Added
     viewMode,
     setViewMode,
     filteredTasks
@@ -176,6 +178,17 @@ const TaskPage = React.memo(() => {
           />
         </div>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+          <Select value={taskTypeFilter} onValueChange={setTaskTypeFilter}>
+            <SelectTrigger className="w-full sm:w-[150px]">
+              <SelectValue placeholder="All Task Types" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Task Types</SelectItem>
+              <SelectItem value="regular">Regular Tasks</SelectItem>
+              <SelectItem value="daily">Daily Tasks</SelectItem>
+            </SelectContent>
+          </Select>
+          
           <Select value={employeeFilter} onValueChange={setEmployeeFilter}>
             <SelectTrigger className="w-full sm:w-[180px]">
               <SelectValue placeholder="All Employees" />
