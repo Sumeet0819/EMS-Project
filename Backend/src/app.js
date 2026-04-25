@@ -14,6 +14,7 @@ const app = express();
 app.use(cors({
     origin: ['http://localhost:5173','https://ems-pi-six.vercel.app'],
     credentials: true,
+    methods: ['GET', 'POST']
 }));
 app.use(cokieParser());
 app.use(express.json());

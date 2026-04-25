@@ -13,9 +13,10 @@ const server = http.createServer(app);
 // Initialize Socket.IO
 const io = new Server(server, {
   cors: {
-    origin: ['http://localhost:5173','https://ems-pi-six.vercel.app'],
+    origin: ['http://localhost:5173', 'https://ems-pi-six.vercel.app', 'https://ems-project-six.vercel.app'],
     credentials: true,
-    methods: ['GET', 'POST']
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
   }
 });
 
