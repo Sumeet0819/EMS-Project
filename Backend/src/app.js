@@ -12,9 +12,10 @@ const cors = require('cors');
 
 const app = express();
 app.use(cors({
-    origin: ['http://localhost:5173','https://ems-pi-six.vercel.app'],
+    origin: ['http://localhost:5173', 'https://ems-pi-six.vercel.app', 'https://ems-project-six.vercel.app'],
     credentials: true,
-    methods: ['GET', 'POST']
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
 }));
 app.use(cokieParser());
 app.use(express.json());
