@@ -122,10 +122,10 @@ const TaskEditor = ({
     <div className="h-full w-full flex flex-col bg-background animate-fade-in pb-10 md:pb-0">
       <form onSubmit={handleSubmit} className="flex flex-col h-full border border-border rounded-lg shadow-sm bg-card overflow-y-auto md:overflow-hidden">
         
-        {/* Top Section: Task Details */}
-        <div className="flex-shrink-0 flex flex-col border-b border-border md:h-[35%]">
+        {/* Top Section */}
+        <div className="flex-shrink-0 flex flex-col z-10 sticky top-0 bg-card border-b border-border">
           {/* Header Action Bar */}
-          <div className="flex items-center justify-between px-4 md:px-6 py-4 border-b border-border bg-card sticky top-0 z-10 font-sans">
+          <div className="flex items-center justify-between px-4 md:px-6 py-4 border-b border-border font-sans">
             <div className="flex items-start gap-2 md:gap-3">
               <Button type="button" variant="ghost" size="icon" onClick={onCancel} className="h-8 w-8 text-muted-foreground hover:text-foreground shrink-0">
                 <RiArrowLeftLine size={18} />
@@ -195,154 +195,54 @@ const TaskEditor = ({
             </div>
           </div>
 
-          {/* Form Fields Area */}
-          <div className="flex-1 p-4 md:p-6 bg-card overflow-y-auto">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-              {/* Title */}
-              <div className="space-y-1.5 lg:col-span-2">
-                <Label htmlFor="title" className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-muted-foreground/80">Task Title</Label>
-                <Input
-                  id="title"
-                  name="title"
-                  value={form.title}
-                  onChange={handleChange}
-                  placeholder="Enter a descriptive title..."
-                  disabled={!canEditCoreFields}
-                  className="bg-background/50 h-9"
-                  required
-                />
-              </div>
-
-              {/* Assignee */}
-              <div className="space-y-1.5">
-                <Label htmlFor="assignedTo" className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-muted-foreground/80">Assign To</Label>
-                <Select
-                  name="assignedTo"
-                  value={form.assignedTo}
-                  onValueChange={(val) => handleSelectChange('assignedTo', val)}
-                  disabled={!canEditCoreFields}
-                  required
-                >
-                  <SelectTrigger id="assignedTo" className="bg-background/50 h-9">
-                    <SelectValue placeholder="Select Employee" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {employees.map((emp) => (
-                      <SelectItem key={emp._id || emp.id} value={emp._id || emp.id}>
-                        {emp.fullName?.firstName || emp.firstName} {emp.fullName?.lastName || emp.lastName}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Priority */}
-              <div className="space-y-1.5">
-                <Label htmlFor="priority" className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-muted-foreground/80">Priority</Label>
-                <Select
-                  name="priority"
-                  value={form.priority}
-                  onValueChange={(val) => handleSelectChange('priority', val)}
-                  disabled={!canEditCoreFields}
-                >
-                  <SelectTrigger id="priority" className="bg-background/50 h-9">
-                    <SelectValue placeholder="Select Priority" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="low">Low</SelectItem>
-                    <SelectItem value="medium">Medium</SelectItem>
-                    <SelectItem value="high">High</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Status */}
-              <div className="space-y-1.5">
-                <Label htmlFor="status" className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-muted-foreground/80">Status</Label>
-                <Select
-                  name="status"
-                  value={form.status}
-                  onValueChange={(val) => handleSelectChange('status', val)}
-                  disabled={!canEditStatus}
-                >
-                  <SelectTrigger id="status" className="bg-background/50 h-9">
-                    <SelectValue placeholder="Select Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="in-progress">In Progress</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Is Daily */}
-              {role === "admin" && canEditCoreFields && (
-                <div className="sm:col-span-2 lg:col-span-3 flex items-center pt-2 gap-2">
-                  <input
-                    type="checkbox"
-                    id="isDaily"
-                    name="isDaily"
-                    checked={form.isDaily}
-                    onChange={(e) => setForm({ ...form, isDaily: e.target.checked })}
-                    className="h-4 w-4 rounded border-border text-primary focus:ring-primary bg-background"
-                  />
-                  <Label htmlFor="isDaily" className="font-semibold cursor-pointer text-xs text-muted-foreground">
-                    Mark as a Daily Recurring Task
-                  </Label>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Tab bar — only for daily tasks in edit/view mode */}
-        {form.isDaily && mode !== "create" && task && (
-          <div className="flex border-b border-border bg-card shrink-0">
-            <button
-              type="button"
-              className={`px-5 py-2.5 text-xs font-bold uppercase tracking-widest transition-colors ${
-                activeTab === "details"
-                  ? "border-b-2 border-primary text-primary"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-              onClick={() => setActiveTab("details")}
-            >
-              Task Details
-            </button>
-            {role === "employee" && (
+          {/* Tab bar — only for daily tasks in edit/view mode */}
+          {form.isDaily && mode !== "create" && task && (
+            <div className="flex bg-card shrink-0">
               <button
                 type="button"
-                className={`flex items-center gap-1.5 px-5 py-2.5 text-xs font-bold uppercase tracking-widest transition-colors ${
-                  activeTab === "submit-eod"
+                className={`px-5 py-2.5 text-xs font-bold uppercase tracking-widest transition-colors ${
+                  activeTab === "details"
                     ? "border-b-2 border-primary text-primary"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
-                onClick={() => setActiveTab("submit-eod")}
+                onClick={() => setActiveTab("details")}
               >
-                <RiStickyNoteLine size={13} /> Submit EOD
+                Task Details
               </button>
-            )}
-              <button
-              type="button"
-              className={`flex items-center gap-1.5 px-5 py-2.5 text-xs font-bold uppercase tracking-widest transition-colors ${
-                activeTab === "eod-history"
-                  ? "border-b-2 border-primary text-primary"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-              onClick={() => setActiveTab("eod-history")}
-            >
-              <RiHistoryLine size={13} /> EOD History
-            </button>
-          </div>
-        )}
+              {role === "employee" && (
+                <button
+                  type="button"
+                  className={`flex items-center gap-1.5 px-5 py-2.5 text-xs font-bold uppercase tracking-widest transition-colors ${
+                    activeTab === "submit-eod"
+                      ? "border-b-2 border-primary text-primary"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                  onClick={() => setActiveTab("submit-eod")}
+                >
+                  <RiStickyNoteLine size={13} /> Submit EOD
+                </button>
+              )}
+                <button
+                type="button"
+                className={`flex items-center gap-1.5 px-5 py-2.5 text-xs font-bold uppercase tracking-widest transition-colors ${
+                  activeTab === "eod-history"
+                    ? "border-b-2 border-primary text-primary"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                onClick={() => setActiveTab("eod-history")}
+              >
+                <RiHistoryLine size={13} /> EOD History
+              </button>
+            </div>
+          )}
+        </div>
 
-        {/* Bottom Section: Tab Content */}
-        <div className="flex-1 flex flex-col p-4 md:p-6 bg-background space-y-4 md:h-[55%]">
+        {/* Bottom Section: Content Area */}
+        <div className="flex-1 flex flex-col overflow-y-auto bg-background p-4 md:p-6 space-y-4 md:space-y-6">
           {activeTab === "eod-history" && form.isDaily && task ? (
-            <>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/80">EOD Remark History</p>
-              <div className="flex-1 overflow-y-auto">
+            <div className="flex flex-col h-full bg-card rounded-lg border border-border p-4 shadow-sm">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/80 mb-4">EOD Remark History</p>
+              <div className="flex-1 overflow-y-auto pr-2">
                 <RemarkHistory
                   taskId={task._id || task.id}
                   role={role}
@@ -350,9 +250,9 @@ const TaskEditor = ({
                   onSaveEOD={onSaveEOD}
                 />
               </div>
-            </>
+            </div>
           ) : activeTab === "submit-eod" && form.isDaily && task ? (
-            <>
+            <div className="flex flex-col h-full bg-card rounded-lg p-4">
               {(!canEditCoreFields && mode === "edit") || (task?.remark && mode === "view") ? (
                 <div className="flex-1 flex flex-col gap-3 rounded-xl border border-primary/20 bg-primary/5 p-4">
                   <div className="flex items-center justify-between">
@@ -408,10 +308,109 @@ const TaskEditor = ({
                   EOD remark submission is only available for employees to complete tasks.
                 </div>
               )}
-            </>
+            </div>
           ) : (
             <>
-              <div className="flex-1 flex flex-col gap-2">
+              {/* Form Fields Area */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 bg-card p-4 md:p-6 rounded-lg border border-border shadow-sm shrink-0">
+                {/* Title */}
+                <div className="space-y-1.5 lg:col-span-2">
+                  <Label htmlFor="title" className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-muted-foreground/80">Task Title</Label>
+                  <Input
+                    id="title"
+                    name="title"
+                    value={form.title}
+                    onChange={handleChange}
+                    placeholder="Enter a descriptive title..."
+                    disabled={!canEditCoreFields}
+                    className="bg-background/50 h-9"
+                    required
+                  />
+                </div>
+
+                {/* Assignee */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="assignedTo" className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-muted-foreground/80">Assign To</Label>
+                  <Select
+                    name="assignedTo"
+                    value={form.assignedTo}
+                    onValueChange={(val) => handleSelectChange('assignedTo', val)}
+                    disabled={!canEditCoreFields}
+                    required
+                  >
+                    <SelectTrigger id="assignedTo" className="bg-background/50 h-9">
+                      <SelectValue placeholder="Select Employee" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {employees.map((emp) => (
+                        <SelectItem key={emp._id || emp.id} value={emp._id || emp.id}>
+                          {emp.fullName?.firstName || emp.firstName} {emp.fullName?.lastName || emp.lastName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Priority */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="priority" className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-muted-foreground/80">Priority</Label>
+                  <Select
+                    name="priority"
+                    value={form.priority}
+                    onValueChange={(val) => handleSelectChange('priority', val)}
+                    disabled={!canEditCoreFields}
+                  >
+                    <SelectTrigger id="priority" className="bg-background/50 h-9">
+                      <SelectValue placeholder="Select Priority" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Status */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="status" className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-muted-foreground/80">Status</Label>
+                  <Select
+                    name="status"
+                    value={form.status}
+                    onValueChange={(val) => handleSelectChange('status', val)}
+                    disabled={!canEditStatus}
+                  >
+                    <SelectTrigger id="status" className="bg-background/50 h-9">
+                      <SelectValue placeholder="Select Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="in-progress">In Progress</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Is Daily */}
+                {role === "admin" && canEditCoreFields && (
+                  <div className="sm:col-span-2 lg:col-span-3 flex items-center pt-2 gap-2">
+                    <input
+                      type="checkbox"
+                      id="isDaily"
+                      name="isDaily"
+                      checked={form.isDaily}
+                      onChange={(e) => setForm({ ...form, isDaily: e.target.checked })}
+                      className="h-4 w-4 rounded border-border text-primary focus:ring-primary bg-background"
+                    />
+                    <Label htmlFor="isDaily" className="font-semibold cursor-pointer text-xs text-muted-foreground">
+                      Mark as a Daily Recurring Task
+                    </Label>
+                  </div>
+                )}
+              </div>
+
+              {/* Task Description */}
+              <div className="flex-1 flex flex-col gap-2 bg-card p-4 md:p-6 rounded-lg border border-border shadow-sm min-h-[150px] shrink-0">
                 <Label htmlFor="description" className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-muted-foreground/80">Task Description</Label>
                 <Textarea
                   id="description"
@@ -420,7 +419,7 @@ const TaskEditor = ({
                   onChange={handleChange}
                   placeholder={isViewOnly ? "No description provided." : "Enter comprehensive task details..."}
                   disabled={!canEditCoreFields}
-                  className="flex-1 resize-none text-sm md:text-base p-4 bg-muted/20 border-none focus-visible:ring-1 focus-visible:ring-primary/20 rounded-md"
+                  className="flex-1 resize-none text-sm md:text-base p-4 bg-background border-border border focus-visible:ring-1 focus-visible:ring-primary/20 rounded-md shadow-inner"
                   required
                 />
               </div>
